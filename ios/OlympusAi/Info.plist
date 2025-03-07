@@ -2,11 +2,6 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-<key>NSSpeechRecognitionUsageDescription</key>
-<string>This app needs access to speech recognition to convert your voice to text</string>
-
-<key>NSMicrophoneUsageDescription</key>
-<string>This app needs access to your microphone for voice recording</string>
 	<key>CFBundleDevelopmentRegion</key>
 	<string>en</string>
 	<key>CFBundleDisplayName</key>
@@ -38,6 +33,10 @@
 	</dict>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string></string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>This app needs access to your microphone for voice recording</string>
+	<key>NSSpeechRecognitionUsageDescription</key>
+	<string>This app needs access to speech recognition to convert your voice to text</string>
 	<key>UIAppFonts</key>
 	<array>
 		<string>Parsi-Regular.ttf</string>

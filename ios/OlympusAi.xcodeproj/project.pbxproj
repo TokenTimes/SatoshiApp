@@ -288,7 +288,7 @@
 					"-ObjC",
 					"-lc++",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = com.yitzhak.OlympusAi;
+				PRODUCT_BUNDLE_IDENTIFIER = com.omri.OlympusAi;
 				PRODUCT_NAME = OlympusAi;
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
@@ -319,7 +319,7 @@
 					"-ObjC",
 					"-lc++",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = com.yitzhak.OlympusAi;
+				PRODUCT_BUNDLE_IDENTIFIER = com.omri.OlympusAi;
 				PRODUCT_NAME = OlympusAi;
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				SWIFT_VERSION = 5.0;

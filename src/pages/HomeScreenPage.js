@@ -16,7 +16,7 @@ import {
 import Voice from 'react-native-voice';
 import InputComponent from '../assets/components/InputComponent';
 
-const HomePageScreen = ({navigation}) => {
+const HomeScreen = ({navigation}) => {
   const isDarkMode = useColorScheme() === 'light';
 
   const [prompt, setPrompt] = useState('');
@@ -452,4 +452,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default HomePageScreen;
+export default HomeScreen;
