@@ -6,6 +6,7 @@ import {useSelector} from 'react-redux';
 // Import screens
 import HomeScreen from './src/pages/HomeScreenPage';
 import LoginScreen from './src/pages/LoginScreen';
+import SignUpScreen from './src/pages/SignUpScreen';
 
 // Use Native Stack Navigator instead of Stack Navigator
 const Stack = createNativeStackNavigator();
@@ -26,6 +27,7 @@ const AppNavigation = () => {
           // Non-authenticated routes
           <>
             <Stack.Screen name="Login" component={LoginScreen} />
+            <Stack.Screen name="SignUp" component={SignUpScreen} />
           </>
         )}
       </Stack.Navigator>
