@@ -6,37 +6,25 @@ import {
   TouchableOpacity,
   Image,
   TextInput,
-  FlatList,
   Modal,
-  ScrollView,
-  SafeAreaView,
-  StatusBar,
-  Animated,
-  Dimensions,
   TouchableWithoutFeedback,
+  Animated,
+  StatusBar,
+  SafeAreaView,
 } from 'react-native';
 import {useNavigation} from '@react-navigation/native';
 import {useSelector, useDispatch} from 'react-redux';
-
-// Assuming you have these icons in your assets folder
-// You might need to install react-native-vector-icons if you don't have it
 import Icon from 'react-native-vector-icons/Ionicons';
+import ChatHistory from './ChatHistory';
 
 const MobileSidebar = ({isVisible, onClose}) => {
   const dispatch = useDispatch();
   const navigation = useNavigation();
   const isDarkMode = useSelector(state => state.global.isDarkMode);
+  const user = useSelector(state => state.global.user || {});
+
   const [searchText, setSearchText] = useState('');
   const [isSearchOpen, setIsSearchOpen] = useState(false);
-
-  // Mock data for conversation history - replace with your actual data
-  const conversations = [
-    {id: '1', title: "What's the current price of Bitcoin?"},
-    {id: '2', title: 'Show me the top 10 cryptocurrencies by market cap'},
-    {id: '3', title: "What's the current price of Bitcoin (BTC)?"},
-    {id: '4', title: 'Show me top 9 transaction of THIS Oct...'},
-    {id: '5', title: 'What is the number of unique holders...'},
-  ];
 
   // Animation for sidebar entry
   const slideAnim = useRef(new Animated.Value(-300)).current;
@@ -57,29 +45,22 @@ const MobileSidebar = ({isVisible, onClose}) => {
     }
   }, [isVisible, slideAnim]);
 
-  // Navigation handler for conversation items
-  const handleConversationPress = conversation => {
-    // Handle navigation or conversation selection
-    // For example: navigation.navigate('Conversation', { id: conversation.id });
-    onClose();
-  };
-
   // Handle new chat button
   const handleNewChat = () => {
-    // Navigate to home or create new chat
-    // navigation.navigate('Home');
+    // Navigate to home screen to start a new chat
+    navigation.navigate('Home');
     onClose();
   };
 
-  // Toggle search input visibility
-  const toggleSearch = () => {
-    setIsSearchOpen(!isSearchOpen);
-    if (!isSearchOpen) {
-      // Focus on search input when opened
-      setTimeout(() => {
-        // You might need a ref to the TextInput to focus it
-      }, 100);
-    }
+  // Get user initials for avatar fallback
+  const getInitials = name => {
+    if (!name) return '?';
+    return name
+      .split(' ')
+      .map(part => part.charAt(0))
+      .join('')
+      .toUpperCase()
+      .substring(0, 2);
   };
 
   if (!isVisible) {
@@ -104,16 +85,18 @@ const MobileSidebar = ({isVisible, onClose}) => {
             {transform: [{translateX: slideAnim}]},
           ]}>
           <SafeAreaView style={styles.safeArea}>
-            <View style={styles.sidebarHeader}>
+            <View
+              style={[
+                styles.sidebarHeader,
+                isDarkMode ? styles.headerDark : styles.headerLight,
+              ]}>
               {isSearchOpen ? (
                 // Search input when search is open
                 <View style={styles.searchContainer}>
                   <TextInput
                     style={[
                       styles.searchInput,
-                      isDarkMode
-                        ? styles.searchInputDark
-                        : styles.searchInputLight,
+                      isDarkMode ? styles.textDark : styles.textLight,
                     ]}
                     placeholder="Search conversations..."
                     placeholderTextColor={isDarkMode ? '#999' : '#666'}
@@ -147,7 +130,7 @@ const MobileSidebar = ({isVisible, onClose}) => {
                   <View style={styles.headerActions}>
                     <TouchableOpacity
                       style={styles.headerButton}
-                      onPress={toggleSearch}>
+                      onPress={() => setIsSearchOpen(true)}>
                       <Icon
                         name="search-outline"
                         size={22}
@@ -165,28 +148,17 @@ const MobileSidebar = ({isVisible, onClose}) => {
               )}
             </View>
 
-            <ScrollView style={styles.conversationList}>
-              {conversations.map(conversation => (
-                <TouchableOpacity
-                  key={conversation.id}
-                  style={[
-                    styles.conversationItem,
-                    isDarkMode
-                      ? styles.conversationItemDark
-                      : styles.conversationItemLight,
-                  ]}
-                  onPress={() => handleConversationPress(conversation)}>
-                  <Text
-                    numberOfLines={2}
-                    style={[
-                      styles.conversationTitle,
-                      isDarkMode ? styles.textDark : styles.textLight,
-                    ]}>
-                    {conversation.title}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </ScrollView>
+            {/* Pass the search text to chat history if search is open */}
+            <View style={styles.historyContainer}>
+              {isSearchOpen ? (
+                <ChatHistory
+                  onSelectConversation={onClose}
+                  initialSearchQuery={searchText}
+                />
+              ) : (
+                <ChatHistory onSelectConversation={onClose} />
+              )}
+            </View>
 
             {/* Profile section at bottom */}
             <View
@@ -196,13 +168,30 @@ const MobileSidebar = ({isVisible, onClose}) => {
                   ? styles.profileSectionDark
                   : styles.profileSectionLight,
               ]}>
-              <View style={styles.profileImageContainer}></View>
+              <View style={styles.profileImageContainer}>
+                {user.profilePicture ? (
+                  <Image
+                    source={{uri: user.profilePicture}}
+                    style={styles.profileImage}
+                  />
+                ) : (
+                  <View
+                    style={[
+                      styles.initialsContainer,
+                      {backgroundColor: '#2C83F6'},
+                    ]}>
+                    <Text style={styles.initials}>
+                      {getInitials(user.name || 'User')}
+                    </Text>
+                  </View>
+                )}
+              </View>
               <Text
                 style={[
                   styles.profileName,
                   isDarkMode ? styles.textDark : styles.textLight,
                 ]}>
-                Eddie Lake
+                {user.name ? user.name.split(' ')[0] : 'User'}
               </Text>
             </View>
           </SafeAreaView>
@@ -216,6 +205,12 @@ const styles = StyleSheet.create({
   modalContainer: {
     flex: 1,
     flexDirection: 'row',
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    zIndex: 1000,
   },
   modalOverlay: {
     flex: 1,
@@ -235,6 +230,7 @@ const styles = StyleSheet.create({
     },
     shadowOpacity: 0.25,
     shadowRadius: 3.84,
+    zIndex: 1001,
   },
   sidebarLight: {
     backgroundColor: '#FFFFFF',
@@ -251,6 +247,12 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     paddingHorizontal: 16,
     justifyContent: 'center',
+  },
+  headerLight: {
+    borderBottomColor: '#EEEEEE',
+  },
+  headerDark: {
+    borderBottomColor: '#333333',
   },
   headerContent: {
     flexDirection: 'row',
@@ -287,45 +289,16 @@ const styles = StyleSheet.create({
   searchInput: {
     flex: 1,
     height: 40,
-    borderRadius: 8,
-    paddingHorizontal: 12,
     fontSize: 16,
-  },
-  searchInputLight: {
-    backgroundColor: '#F5F5F5',
-    color: '#000000',
-  },
-  searchInputDark: {
-    backgroundColor: '#2A2A2A',
-    color: '#FFFFFF',
   },
   closeSearchButton: {
     padding: 8,
     marginLeft: 4,
   },
-  conversationList: {
+  historyContainer: {
     flex: 1,
   },
-  conversationItem: {
-    padding: 16,
-    borderBottomWidth: 1,
-  },
-  conversationItemLight: {
-    borderBottomColor: '#F0F0F0',
-  },
-  conversationItemDark: {
-    borderBottomColor: '#333333',
-  },
-  conversationTitle: {
-    fontSize: 14,
-    lineHeight: 20,
-  },
-  textLight: {
-    color: '#000000',
-  },
-  textDark: {
-    color: '#FFFFFF',
-  },
+  // Profile section
   profileSection: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -349,9 +322,27 @@ const styles = StyleSheet.create({
     width: '100%',
     height: '100%',
   },
+  initialsContainer: {
+    width: '100%',
+    height: '100%',
+    borderRadius: 18,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  initials: {
+    color: '#FFF',
+    fontSize: 14,
+    fontWeight: 'bold',
+  },
   profileName: {
     fontSize: 15,
     fontWeight: '500',
+  },
+  textLight: {
+    color: '#000000',
+  },
+  textDark: {
+    color: '#FFFFFF',
   },
 });
 
