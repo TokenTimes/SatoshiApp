@@ -322,29 +322,6 @@ const ConversationScreen = ({route, navigation}) => {
         styles.safeArea,
         isDarkMode ? styles.safeAreaDark : styles.safeAreaLight,
       ]}>
-      {/* Header with back button */}
-      <View
-        style={[
-          styles.header,
-          isDarkMode ? styles.headerDark : styles.headerLight,
-        ]}>
-        <TouchableOpacity onPress={handleBackPress} style={styles.backButton}>
-          <Icon
-            name="arrow-left"
-            size={20}
-            color={isDarkMode ? '#FFFFFF' : '#000000'}
-          />
-        </TouchableOpacity>
-        <Text
-          style={[
-            styles.headerTitle,
-            isDarkMode ? styles.textDark : styles.textLight,
-          ]}>
-          Conversation
-        </Text>
-        <View style={styles.headerRight} />
-      </View>
-
       <KeyboardAvoidingView
         style={styles.container}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -505,32 +482,11 @@ const styles = StyleSheet.create({
   safeAreaDark: {
     backgroundColor: 'black',
   },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    height: 56,
-    borderBottomWidth: 1,
-  },
-  headerLight: {
-    backgroundColor: '#FFFFFF',
-    borderBottomColor: '#E5E5E5',
-  },
-  headerDark: {
-    backgroundColor: 'black',
-    borderBottomColor: '#333333',
-  },
+
   backButton: {
     padding: 8,
   },
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-  },
-  headerRight: {
-    width: 40, // Balances the back button for centered title
-  },
+
   container: {
     flex: 1,
   },
