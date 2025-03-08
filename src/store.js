@@ -9,7 +9,7 @@ import otpApi from './services/otp';
 import chatApi from './services/chat';
 
 // Import global reducer
-import globalReducer from './services/GlobalSlice';
+import globalReducer from './slices/globalSlice';
 
 export const store = configureStore({
   reducer: {
