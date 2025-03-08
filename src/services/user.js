@@ -1,9 +1,9 @@
 import {createApi} from '@reduxjs/toolkit/query/react';
-import {rtkBaseQuery} from '../baseQuery';
+import {rtkBaseQueryWithReauth} from '../baseQuery';
 
 const userApi = createApi({
   reducerPath: 'userApi',
-  baseQuery: rtkBaseQuery,
+  baseQuery: rtkBaseQueryWithReauth,
   tagTypes: ['CHAT_SETTING', 'CHANGE_NAME', 'CHANGE_EMAIL', 'DELETE'],
   endpoints: builder => ({
     updateChatSetting: builder.mutation({

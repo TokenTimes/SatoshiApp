@@ -2,6 +2,7 @@ import React, {useState, useRef} from 'react';
 import {View, Text, StyleSheet, TouchableOpacity, Modal} from 'react-native';
 import {useSelector, useDispatch} from 'react-redux';
 import {toggleDarkMode, clearUserData} from '../../slices/globalSlice';
+import {useGetUserDetailQuery} from '../../services/user'; // Import the query hook
 
 // Create a simplified version of the dropdown for direct use
 const ProfileDropdownMenu = ({
@@ -142,7 +143,9 @@ const ProfileDropdownMenu = ({
 const ProfileSection = ({navigation, setIsDialogOpen, setDialog}) => {
   const [isDropdownVisible, setIsDropdownVisible] = useState(false);
   const isDarkMode = useSelector(state => state.global.isDarkMode);
-  const user = useSelector(state => state.global.user || {});
+
+  // Use the RTK Query hook to fetch user details
+  const {data: userData} = useGetUserDetailQuery();
 
   // Get user initials for avatar
   const getInitials = name => {
@@ -170,11 +173,11 @@ const ProfileSection = ({navigation, setIsDialogOpen, setDialog}) => {
         onPress={toggleDropdown}>
         <View style={styles.avatarContainer}>
           <Text style={styles.avatarText}>
-            {getInitials(user.name || 'User')}
+            {userData?.data.name[0] || 'User'[0]}
           </Text>
         </View>
         <Text style={[styles.userName, isDarkMode ? styles.userNameDark : {}]}>
-          {user.name ? user.name.split(' ')[0] : 'User'}
+          {userData?.data.name || 'User'}
         </Text>
       </TouchableOpacity>
 
