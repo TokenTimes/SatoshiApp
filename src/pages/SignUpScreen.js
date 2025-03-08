@@ -259,7 +259,11 @@ const SignUpScreen = () => {
           keyboardShouldPersistTaps="handled">
           <View style={styles.logoContainer}>
             <Image
-              source={require('../assets/images/sidebarLogoBlack.png')}
+              source={
+                isDarkMode
+                  ? require('../assets/images/sidebarLogo.png')
+                  : require('../assets/images/sidebarLogoBlack.png')
+              }
               style={styles.logo}
               resizeMode="contain"
             />

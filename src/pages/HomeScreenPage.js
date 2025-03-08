@@ -11,14 +11,17 @@ import {
   Animated,
   Easing,
   TouchableWithoutFeedback,
+  Switch,
 } from 'react-native';
 import Voice from 'react-native-voice';
 import InputComponent from '../assets/components/InputComponent';
-import {useSelector} from 'react-redux';
+import {useSelector, useDispatch} from 'react-redux';
+import {toggleDarkMode, clearUserData} from '../slices/globalSlice'; // Import from your actual globalSlice
 
 const HomeScreen = ({navigation}) => {
   // Use Redux global state for dark mode instead of device settings
   const isDarkMode = useSelector(state => state.global.isDarkMode);
+  const dispatch = useDispatch();
 
   const [prompt, setPrompt] = useState('');
   const [image, setImage] = useState('');
@@ -176,6 +179,20 @@ const HomeScreen = ({navigation}) => {
     setExpanded(!expanded);
   };
 
+  // Function to handle theme toggle
+  const handleToggleTheme = () => {
+    dispatch(toggleDarkMode());
+  };
+
+  // Function to handle logout
+  const handleLogout = () => {
+    // Dispatch the clearUserData action to reset user state in Redux
+    dispatch(clearUserData());
+    console.log('User logged out');
+    // Navigate to Login screen after clearing user data
+    navigation.navigate('Login');
+  };
+
   useEffect(() => {
     let interval;
 
@@ -300,6 +317,31 @@ const HomeScreen = ({navigation}) => {
               onSendPress={handleSendPress}
               isDarkMode={isDarkMode}
             />
+
+            {/* Theme Toggle and Logout Button */}
+            <View style={styles.controlsContainer}>
+              <View style={styles.toggleContainer}>
+                <Text
+                  style={
+                    isDarkMode ? styles.toggleTextDark : styles.toggleTextLight
+                  }>
+                  {isDarkMode ? 'Dark Mode' : 'Light Mode'}
+                </Text>
+                <Switch
+                  trackColor={{false: '#767577', true: '#81b0ff'}}
+                  thumbColor={isDarkMode ? '#2c83f6' : '#f4f3f4'}
+                  ios_backgroundColor="#3e3e3e"
+                  onValueChange={handleToggleTheme}
+                  value={isDarkMode}
+                />
+              </View>
+
+              <TouchableOpacity
+                style={styles.logoutButton}
+                onPress={handleLogout}>
+                <Text style={styles.logoutButtonText}>Logout</Text>
+              </TouchableOpacity>
+            </View>
           </View>
         )}
 
@@ -431,6 +473,43 @@ const styles = StyleSheet.create({
     color: 'white',
     fontSize: 16,
     fontWeight: 'bold',
+  },
+
+  // New styles for toggle and logout
+  controlsContainer: {
+    width: '100%',
+    marginTop: 15,
+    paddingHorizontal: 10,
+    alignItems: 'center',
+  },
+  toggleContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 15,
+  },
+  toggleTextLight: {
+    color: '#010102',
+    marginRight: 10,
+    fontSize: 16,
+  },
+  toggleTextDark: {
+    color: '#ffffff',
+    marginRight: 10,
+    fontSize: 16,
+  },
+  logoutButton: {
+    backgroundColor: '#e74c3c',
+    paddingVertical: 8,
+    paddingHorizontal: 20,
+    borderRadius: 20,
+    width: 120,
+    alignItems: 'center',
+  },
+  logoutButtonText: {
+    color: 'white',
+    fontWeight: '600',
+    fontSize: 14,
   },
 });
 
