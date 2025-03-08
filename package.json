@@ -22,6 +22,7 @@
     "expo-font": "^13.0.4",
     "expo-modules-core": "^2.2.2",
     "i": "^0.3.7",
+    "isomorphic-dompurify": "^2.22.0",
     "jwt-check-expiry": "^1.0.10",
     "lucide-react-native": "^0.479.0",
     "npm": "^11.2.0",
@@ -35,6 +36,7 @@
     "react-native-toast-message": "^2.2.1",
     "react-native-vector-icons": "^10.2.0",
     "react-native-voice": "^0.3.0",
+    "react-native-webview": "^13.13.2",
     "react-redux": "^9.2.0"
   },
   "devDependencies": {

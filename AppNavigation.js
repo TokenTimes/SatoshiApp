@@ -10,6 +10,7 @@ import MainLayout from './MainLayout';
 import HomeScreen from './src/pages/HomeScreenPage';
 import LoginScreen from './src/pages/LoginScreen';
 import SignUpScreen from './src/pages/SignUpScreen';
+import ConversationScreen from './src/pages/ConversationScreen'; // Import the ConversationScreen
 
 // Create a separate stack for authenticated routes
 const AuthStack = createNativeStackNavigator();
@@ -24,6 +25,14 @@ const AuthNavigator = () => {
           headerShown: false,
         }}>
         <AuthStack.Screen name="Home" component={HomeScreen} />
+        <AuthStack.Screen
+          name="Room"
+          component={ConversationScreen}
+          // This enables us to pass the conversation ID in navigation
+          options={({route}) => ({
+            // We can add additional options here if needed
+          })}
+        />
         {/* Add other authenticated screens here */}
       </AuthStack.Navigator>
     </MainLayout>

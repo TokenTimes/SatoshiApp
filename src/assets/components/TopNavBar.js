@@ -61,17 +61,20 @@ const TopNavbar = () => {
         </TouchableOpacity>
 
         {/* Center logo */}
-        <View style={styles.logoContainer}>
-          <Image
-            source={
-              effectiveDarkMode
-                ? require('../../assets/images/sidebarLogo.png')
-                : require('../../assets/images/sidebarLogoBlack.png')
-            }
-            style={styles.logo}
-            resizeMode="contain"
-          />
-        </View>
+        <TouchableOpacity onPress={() => navigation.navigate('Home')}>
+          <View style={styles.logoContainer}>
+            {' '}
+            <Image
+              source={
+                effectiveDarkMode
+                  ? require('../../assets/images/sidebarLogo.png')
+                  : require('../../assets/images/sidebarLogoBlack.png')
+              }
+              style={styles.logo}
+              resizeMode="contain"
+            />
+          </View>
+        </TouchableOpacity>
 
         {/* Right circle - blue with white plus, navigates to Home */}
         <TouchableOpacity
