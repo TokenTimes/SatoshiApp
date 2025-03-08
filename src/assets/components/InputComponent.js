@@ -68,7 +68,7 @@ const InputComponent = ({
           : styles.inputContainerMobile
       }>
       <View style={styles.inputWrapperMobile}>
-        {/* White "X" button for clearing input or canceling recording - only visible when there's text */}
+        {/* Clear button (X) - redesigned to be more elegant */}
         {(prompt.trim() !== '' || isRecording) && (
           <TouchableOpacity
             onPress={() => {
@@ -81,9 +81,20 @@ const InputComponent = ({
                 setPrompt('');
               }
             }}
-            style={styles.clearButton}
+            style={[
+              styles.clearButton,
+              isDarkMode ? styles.clearButtonDark : styles.clearButtonLight,
+            ]}
             disabled={loading && !isRecording}>
-            <Text style={styles.clearButtonText}>X</Text>
+            <Text
+              style={[
+                styles.clearButtonText,
+                isDarkMode
+                  ? styles.clearButtonTextDark
+                  : styles.clearButtonTextLight,
+              ]}>
+              ✕
+            </Text>
           </TouchableOpacity>
         )}
 
@@ -279,15 +290,32 @@ const styles = StyleSheet.create({
     color: 'white',
     fontSize: 15,
   },
+  // Redesigned clear button styles
   clearButton: {
-    paddingHorizontal: 8,
+    height: 20,
+    width: 20,
+    borderRadius: 10,
     justifyContent: 'center',
     alignItems: 'center',
+    marginRight: 8,
+  },
+  clearButtonLight: {
+    backgroundColor: '#e0e0e0',
+  },
+  clearButtonDark: {
+    backgroundColor: '#444',
   },
   clearButtonText: {
-    color: 'white',
-    fontSize: 14,
-    fontWeight: 'bold',
+    fontSize: 10,
+    fontWeight: '600',
+    lineHeight: 20,
+    textAlign: 'center',
+  },
+  clearButtonTextLight: {
+    color: '#555',
+  },
+  clearButtonTextDark: {
+    color: '#f0f0f0',
   },
   logo: {
     width: 200,
