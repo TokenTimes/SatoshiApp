@@ -5,6 +5,7 @@ import {
   StyleSheet,
   TouchableOpacity,
   useColorScheme,
+  Text,
 } from 'react-native';
 import {useNavigation} from '@react-navigation/native';
 import {useSelector, useDispatch} from 'react-redux';
@@ -33,18 +34,17 @@ const TopNavbar = () => {
         styles.navbar,
         effectiveDarkMode ? styles.navbarDark : styles.navbarLight,
       ]}>
-      {/* Left circle */}
-      <TouchableOpacity
-        style={[
-          styles.circleButton,
-          effectiveDarkMode
-            ? styles.circleButtonDark
-            : styles.circleButtonLight,
-        ]}
-        onPress={() => navigation.navigate('Home')}>
-        <View style={styles.circleDot} />
-      </TouchableOpacity>
-
+      {/* Left circle - blue, does nothing */}
+      <View>{/* Empty blue circle */}</View>
+      <Image
+        source={
+          !isDarkMode
+            ? require('../../assets/Icons/ListBlack.png')
+            : require('../../assets/Icons/List.png')
+        }
+        resizeMode="contain"
+        style={styles.List}
+      />
       {/* Center logo */}
       <View style={styles.logoContainer}>
         <Image
@@ -58,21 +58,11 @@ const TopNavbar = () => {
         />
       </View>
 
-      {/* Right circle (Dark mode toggle) */}
+      {/* Right circle - blue with white plus, navigates to Home */}
       <TouchableOpacity
-        style={[
-          styles.circleButton,
-          effectiveDarkMode
-            ? styles.circleButtonDark
-            : styles.circleButtonLight,
-        ]}
-        onPress={toggleDarkMode}>
-        <View
-          style={[
-            styles.circleDot,
-            effectiveDarkMode ? styles.circleDotDark : styles.circleDotLight,
-          ]}
-        />
+        style={styles.circleButtonBlue}
+        onPress={() => navigation.navigate('Home')}>
+        <Text style={styles.plusSign}>+</Text>
       </TouchableOpacity>
     </View>
   );
@@ -92,8 +82,12 @@ const styles = StyleSheet.create({
     borderBottomColor: '#EEEEEE',
   },
   navbarDark: {
-    backgroundColor: '#121212',
+    backgroundColor: 'black',
     borderBottomColor: '#333333',
+  },
+  List: {
+    width: 25,
+    height: 25,
   },
   logoContainer: {
     flex: 1,
@@ -104,33 +98,21 @@ const styles = StyleSheet.create({
     width: 150,
     height: 40,
   },
-  circleButton: {
-    width: 36,
-    height: 36,
+  circleButtonBlue: {
+    width: 30,
+    height: 30,
     borderRadius: 18,
     justifyContent: 'center',
     alignItems: 'center',
-    borderWidth: 1,
-  },
-  circleButtonLight: {
-    backgroundColor: '#F9F9F9',
-    borderColor: '#E0E0E0',
-  },
-  circleButtonDark: {
-    backgroundColor: '#1E1E1E',
-    borderColor: '#333333',
-  },
-  circleDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
     backgroundColor: '#2C83F6',
   },
-  circleDotLight: {
-    opacity: 0.8,
-  },
-  circleDotDark: {
-    opacity: 1,
+  plusSign: {
+    color: '#FFFFFF',
+    fontSize: 20,
+    fontWeight: 'bold',
+    lineHeight: 24,
+    textAlign: 'center',
+    marginTop: -3,
   },
 });
 
