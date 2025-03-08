@@ -59,7 +59,7 @@ const ConversationItem = ({roomInfo, index, totalItems, onSelect}) => {
     if (onSelect) onSelect();
 
     // Navigate to the conversation
-    navigation.navigate('Room', {roomId: roomInfo._id});
+    navigation.navigate('Room', {conversationId: roomInfo._id});
   };
 
   // Handle renaming a conversation

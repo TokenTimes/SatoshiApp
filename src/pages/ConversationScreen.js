@@ -11,26 +11,28 @@ import {
   Keyboard,
   ActivityIndicator,
   SafeAreaView,
+  Dimensions,
 } from 'react-native';
 import {useDispatch, useSelector} from 'react-redux';
 import {SOCKET_EVENTS} from '../utils/Constants';
 import {incrementPage, setAllChat, setRoomId} from '../slices/globalSlice';
-import {WebView} from 'react-native-webview';
+import RenderHtml from 'react-native-render-html'; // Import react-native-render-html
 import {useGetAllMessageQuery} from '../services/chat';
 import {useGetUserDetailQuery} from '../services/user';
-// import Graph from '../components/Graph';
-// import TableCreator from '../components/TableCreator';
-import Icon from 'react-native-vector-icons/FontAwesome';
-import InputComponent from '../assets/components/InputComponent'; // Import the InputComponent
+import InputComponent from '../assets/components/InputComponent';
+
+// Get device width for HTML content sizing
+const {width} = Dimensions.get('window');
 
 // Helper function to check if string contains HTML
 const containsHTML = str => {
-  return /<[a-z][\s\S]*>/i.test(str);
+  return str && typeof str === 'string' && /<[a-z][\s\S]*>/i.test(str);
 };
 
 // Simple HTML sanitizer function for React Native
-// Note: This is a basic implementation - for production, consider a more robust solution
 const simpleSanitizeHtml = html => {
+  if (!html) return '';
+
   // Remove potentially dangerous script tags
   let sanitized = html.replace(
     /<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi,
@@ -47,6 +49,9 @@ const ConversationScreen = ({route, navigation}) => {
   // Extract conversationId from route params
   const {conversationId} = route.params || {};
 
+  // Debug log the conversation ID
+  console.log('ConversationScreen initialized with ID:', conversationId);
+
   const chatScrollViewRef = useRef(null);
   const [previousMessage, setPreviousMessage] = useState([]);
   const [seenAllChat, setSeenAllChat] = useState(false);
@@ -55,7 +60,7 @@ const ConversationScreen = ({route, navigation}) => {
   const [displayTicker, setDisplayTicker] = useState(null);
   const [errorMessage, setErrorMessage] = useState('');
   const [inputMessage, setInputMessage] = useState('');
-  const [isRecording, setIsRecording] = useState(false); // State for recording
+  const [isRecording, setIsRecording] = useState(false);
 
   // Redux state
   const isDarkMode = useSelector(state => state.global.isDarkMode);
@@ -64,15 +69,21 @@ const ConversationScreen = ({route, navigation}) => {
   );
   const dispatch = useDispatch();
 
-  // Set conversation ID in Redux state when it changes
+  // Important: Set conversation ID in Redux state when component mounts or ID changes
   useEffect(() => {
-    if (conversationId && conversationId !== roomId) {
+    if (conversationId) {
+      console.log('Setting roomId in Redux to:', conversationId);
       dispatch(setRoomId(conversationId));
-      dispatch(setAllChat([])); // Clear previous conversation messages
+      if (conversationId !== roomId) {
+        console.log('Clearing previous chat messages');
+        dispatch(setAllChat([])); // Clear previous conversation messages
+      }
+    } else {
+      console.warn('No conversationId provided in route params!');
     }
-  }, [conversationId, roomId, dispatch]);
+  }, [conversationId, dispatch, roomId]);
 
-  // Queries
+  // Queries - Make sure to use the conversationId directly from route params
   const {
     data: roomMessage,
     isLoading,
@@ -84,54 +95,305 @@ const ConversationScreen = ({route, navigation}) => {
     },
   );
 
-  const {data: userData} = useGetUserDetailQuery();
+  // Debug logs - Keep these to help diagnose issues
+  console.log('Room message data:', roomMessage?.data);
+  console.log('Room conversation ID:', conversationId);
+  console.log(
+    'Current socket connection status:',
+    socket ? 'Connected' : 'Not connected',
+  );
+  console.log('Current Redux roomId:', roomId);
+  console.log('Current page:', page);
 
-  // Create a component to render HTML content safely
+  // Create a component to render HTML content with react-native-render-html
   const HTMLRenderer = ({htmlContent}) => {
-    const sanitizedHtml = simpleSanitizeHtml(htmlContent);
-    const wrappedHtml = `
-      <html>
-        <head>
-          <meta name="viewport" content="width=device-width, initial-scale=1.0">
-          <style>
-            body {
-              font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-              font-size: 16px;
-              color: ${isDarkMode ? '#FFFFFF' : '#000000'};
-              background-color: transparent;
-              margin: 0;
-              padding: 0;
-            }
-            a {
-              color: #2c83f6;
-              text-decoration: none;
-            }
-          </style>
-        </head>
-        <body>${sanitizedHtml}</body>
-      </html>
-    `;
+    // If no content or not HTML, just render as plain text
 
-    return (
-      <WebView
-        originWhitelist={['*']}
-        source={{html: wrappedHtml}}
-        style={{backgroundColor: 'transparent', height: 'auto', minHeight: 20}}
-        scrollEnabled={false}
-        onSizeChanged={event => {
-          // Adjust webview height based on content
-        }}
-      />
-    );
+    // Sanitize HTML content
+    const sanitizedHtml = simpleSanitizeHtml(htmlContent);
+
+    // Define tag styles for HTML elements
+    const tagsStyles = {
+      body: {
+        color: isDarkMode ? '#FFFFFF' : '#000000',
+        fontSize: 16,
+      },
+      p: {
+        marginBottom: 10,
+        lineHeight: 22,
+      },
+      h1: {
+        fontSize: 24,
+        fontWeight: 'bold',
+        marginVertical: 10,
+        color: isDarkMode ? '#FFFFFF' : '#000000',
+      },
+      h2: {
+        fontSize: 20,
+        fontWeight: 'bold',
+        marginVertical: 8,
+        color: isDarkMode ? '#FFFFFF' : '#000000',
+      },
+      h3: {
+        fontSize: 18,
+        fontWeight: 'bold',
+        marginVertical: 6,
+        color: isDarkMode ? '#FFFFFF' : '#000000',
+      },
+      h4: {
+        fontSize: 16,
+        fontWeight: 'bold',
+        marginVertical: 5,
+        color: isDarkMode ? '#FFFFFF' : '#000000',
+      },
+      h5: {
+        fontSize: 14,
+        fontWeight: 'bold',
+        marginVertical: 4,
+        color: isDarkMode ? '#FFFFFF' : '#000000',
+      },
+      h6: {
+        fontSize: 13,
+        fontWeight: 'bold',
+        marginVertical: 3,
+        color: isDarkMode ? '#FFFFFF' : '#000000',
+      },
+      a: {
+        color: '#2c83f6',
+        textDecorationLine: 'underline',
+      },
+      ul: {
+        marginVertical: 8,
+        paddingLeft: 16,
+      },
+      ol: {
+        marginVertical: 8,
+        paddingLeft: 16,
+      },
+      li: {
+        marginBottom: 4,
+      },
+      // Bold styling
+      b: {
+        fontWeight: 'bold',
+      },
+      strong: {
+        fontWeight: 'bold',
+      },
+      // Italic styling
+      i: {
+        fontStyle: 'italic',
+      },
+      em: {
+        fontStyle: 'italic',
+      },
+      // Underline
+      u: {
+        textDecorationLine: 'underline',
+      },
+      // Strikethrough
+      s: {
+        textDecorationLine: 'line-through',
+      },
+      strike: {
+        textDecorationLine: 'line-through',
+      },
+      del: {
+        textDecorationLine: 'line-through',
+      },
+      // Table styling
+      table: {
+        borderWidth: 1,
+        borderColor: isDarkMode ? '#444' : '#DDD',
+        marginVertical: 10,
+        borderRadius: 4,
+        overflow: 'hidden',
+        width: '100%',
+      },
+      thead: {
+        backgroundColor: isDarkMode ? '#333' : '#F5F5F5',
+      },
+      tbody: {
+        backgroundColor: isDarkMode ? '#222' : '#FFFFFF',
+      },
+      tr: {
+        flexDirection: 'row',
+      },
+      th: {
+        padding: 8,
+        fontWeight: 'bold',
+        borderWidth: 1,
+        borderColor: isDarkMode ? '#444' : '#DDD',
+        color: isDarkMode ? '#FFF' : '#333',
+      },
+      td: {
+        padding: 8,
+        borderWidth: 1,
+        borderColor: isDarkMode ? '#444' : '#DDD',
+      },
+      // Code styling
+      code: {
+        fontFamily: 'Courier',
+        backgroundColor: isDarkMode ? '#333' : '#F5F5F5',
+        padding: 2,
+        borderRadius: 3,
+        fontSize: 14,
+      },
+      pre: {
+        backgroundColor: isDarkMode ? '#333' : '#F5F5F5',
+        padding: 10,
+        borderRadius: 4,
+        marginVertical: 8,
+        overflow: 'scroll',
+      },
+      // Blockquote styling
+      blockquote: {
+        borderLeftWidth: 4,
+        borderLeftColor: isDarkMode ? '#555' : '#DDD',
+        paddingLeft: 12,
+        marginLeft: 0,
+        marginVertical: 8,
+        fontStyle: 'italic',
+      },
+      // Definition lists
+      dl: {
+        marginVertical: 8,
+      },
+      dt: {
+        fontWeight: 'bold',
+        marginTop: 8,
+      },
+      dd: {
+        marginLeft: 16,
+      },
+      // Horizontal rule
+      hr: {
+        borderBottomWidth: 1,
+        borderBottomColor: isDarkMode ? '#555' : '#DDD',
+        marginVertical: 12,
+      },
+      // Superscript and subscript
+      sup: {
+        fontSize: 10,
+        lineHeight: 14,
+      },
+      sub: {
+        fontSize: 10,
+        lineHeight: 14,
+      },
+      // Mark (highlighted text)
+      mark: {
+        backgroundColor: '#FFEB3B',
+        color: '#000000',
+        padding: 0,
+        borderRadius: 2,
+      },
+      // Abbreviation
+      abbr: {
+        textDecorationLine: 'underline',
+        textDecorationStyle: 'dotted',
+      },
+      // Figure and figcaption
+      figure: {
+        marginVertical: 10,
+      },
+      figcaption: {
+        fontSize: 12,
+        fontStyle: 'italic',
+        textAlign: 'center',
+        marginTop: 4,
+      },
+      // Address
+      address: {
+        fontStyle: 'italic',
+        marginVertical: 8,
+      },
+      // Citations
+      cite: {
+        fontStyle: 'italic',
+      },
+      // Quotes
+      q: {
+        fontStyle: 'italic',
+      },
+      // Details and summary
+      details: {
+        marginVertical: 8,
+      },
+      summary: {
+        fontWeight: 'bold',
+      },
+    };
+
+    // Base style for all text content
+    const baseStyle = {
+      color: isDarkMode ? '#FFFFFF' : '#000000',
+      fontSize: 16,
+    };
+
+    try {
+      return (
+        <RenderHtml
+          contentWidth={width - 80} // Adjust based on your bubble width
+          source={{html: sanitizedHtml}}
+          tagsStyles={tagsStyles}
+          baseStyle={baseStyle}
+          enableExperimentalBRCollapsing={true}
+          enableExperimentalGhostLinesPrevention={true}
+          defaultTextProps={{
+            selectable: true, // Make text selectable
+          }}
+          // Handle links if needed
+          renderersProps={{
+            a: {
+              onPress: (event, href) => {
+                console.log('Link pressed:', href);
+                // Add your link handling logic here if needed
+              },
+            },
+          }}
+          // Ignore potentially dangerous tags
+          ignoredTags={['script', 'iframe']}
+        />
+      );
+    } catch (error) {
+      console.error('Error rendering HTML:', error);
+      // Fallback to plain text if rendering fails
+      return (
+        <Text
+          style={[
+            styles.messageText,
+            isDarkMode ? styles.textDark : styles.textLight,
+          ]}>
+          {htmlContent
+            .replace(/<[^>]*>/g, ' ')
+            .replace(/\s+/g, ' ')
+            .trim()}
+        </Text>
+      );
+    }
   };
 
   // Send message to the socket
   const sendMessage = useCallback(
     message => {
+      if (!socket) {
+        console.error('Cannot send message - socket is not connected');
+        setErrorMessage('Connection issue. Please try again.');
+        return;
+      }
+
+      if (!conversationId) {
+        console.error('Cannot send message - no conversation ID');
+        setErrorMessage('Conversation error. Please restart the chat.');
+        return;
+      }
+
+      console.log('Sending message to room:', conversationId);
       setSocketLoader(true);
-      socket?.emit(SOCKET_EVENTS.QUERY_SEND, {
+      socket.emit(SOCKET_EVENTS.QUERY_SEND, {
         message,
-        roomId: conversationId,
+        roomId: conversationId, // Use conversationId directly from route
         messages: allChat || [],
       });
     },
@@ -141,17 +403,22 @@ const ConversationScreen = ({route, navigation}) => {
   // Handle new AI response
   const handleResponse = useCallback(
     message => {
+      console.log('Received message from socket:', message);
+      console.log('Current conversation ID:', conversationId);
+
       // If the response is for a room other than the currently active room,
       // clear any loading states and ignore this message.
       if (message?.roomId !== conversationId) {
+        console.log('Message is for different room, ignoring');
         setSocketLoader(false);
         setMessageLoading(false);
         return;
       }
 
       // The response is for the current room—proceed with normal processing.
+      console.log('Processing message for current room');
       setMessageLoading(true);
-      const chatArr = allChat;
+      const chatArr = allChat || []; // Handle potential undefined
       setDisplayTicker(message?.ticker);
 
       dispatch(
@@ -159,7 +426,7 @@ const ConversationScreen = ({route, navigation}) => {
           ...chatArr,
           {
             sender: 'AI',
-            message: message?.message,
+            message: message?.message || '',
             graph: message?.ticker,
             table: message?.table,
           },
@@ -175,31 +442,18 @@ const ConversationScreen = ({route, navigation}) => {
     [allChat, dispatch, conversationId],
   );
 
-  // Keyboard event handlers
-  useEffect(() => {
-    const keyboardDidShowListener = Keyboard.addListener(
-      'keyboardDidShow',
-      () => {
-        // Scroll to bottom when keyboard appears
-        setTimeout(() => scrollToBottom(), 100);
-      },
-    );
-
-    return () => {
-      keyboardDidShowListener.remove();
-    };
-  }, []);
-
   // Listen for responses in the room
   const listenRoom = useCallback(() => {
     if (socket) {
+      console.log('Setting up socket listener for room:', conversationId);
       socket.on(SOCKET_EVENTS.QUERY_RESPONSE, handleResponse);
       return () => {
-        console.log('Cleaning up QUERY_RESPONSE listener...');
+        console.log('Cleaning up socket listener for room:', conversationId);
         socket.off(SOCKET_EVENTS.QUERY_RESPONSE, handleResponse);
       };
     }
-  }, [socket, handleResponse]);
+    return () => {}; // Always return a cleanup function
+  }, [socket, handleResponse, conversationId]);
 
   // Effect: attach/detach the room listener
   useEffect(() => {
@@ -209,10 +463,11 @@ const ConversationScreen = ({route, navigation}) => {
 
   // Effect: if newMessage is set externally, send it once
   useEffect(() => {
-    if (newMessage && socket) {
+    if (newMessage && socket && conversationId) {
+      console.log('New message detected, sending:', newMessage);
       sendMessage(newMessage);
     }
-  }, [newMessage, socket, sendMessage]);
+  }, [newMessage, socket, conversationId, sendMessage]);
 
   // On form submit
   const handleSendMessage = () => {
@@ -228,11 +483,17 @@ const ConversationScreen = ({route, navigation}) => {
 
     setErrorMessage('');
     Keyboard.dismiss();
+
+    // Add user message to chat first
     dispatch(setAllChat([...allChat, {sender: 'User', message: inputMessage}]));
+
+    // Then send to server
     sendMessage(inputMessage);
+
     setTimeout(() => {
       scrollToBottom();
-    }, 500);
+    }, 100);
+
     setInputMessage('');
   };
 
@@ -241,14 +502,11 @@ const ConversationScreen = ({route, navigation}) => {
     setIsRecording(true);
     // Implement your voice recording logic here
     console.log('Start recording...');
-    // You would typically use a library like react-native-voice or similar
   };
 
   const stopRecording = () => {
     setIsRecording(false);
-    // Implement your logic to stop recording and process the audio
     console.log('Stop recording...');
-    // After processing, you might update the inputMessage with transcribed text
   };
 
   // Load older messages if user scrolls to the top
@@ -258,7 +516,8 @@ const ConversationScreen = ({route, navigation}) => {
       previousMessage &&
       !isFetching
     ) {
-      const arr = roomMessage?.data?.messages?.map(messageInfo => {
+      console.log('Loading older messages:', roomMessage.data.messages.length);
+      const arr = roomMessage.data.messages.map(messageInfo => {
         return {
           sender: messageInfo?.sender,
           message: messageInfo?.message,
@@ -273,6 +532,7 @@ const ConversationScreen = ({route, navigation}) => {
   // Cleanup the allChat when leaving
   useEffect(() => {
     return () => {
+      console.log('Component unmounting, clearing chat');
       dispatch(setAllChat([]));
     };
   }, [dispatch]);
@@ -297,6 +557,7 @@ const ConversationScreen = ({route, navigation}) => {
   const handleScrollToTop = event => {
     const {contentOffset} = event.nativeEvent;
     if (contentOffset.y <= 0 && !isFetching && !seenAllChat) {
+      console.log('Scrolled to top, loading more messages');
       setPreviousMessage(allChat);
       if (page < roomMessage?.data?.pagination?.totalPages) {
         dispatch(incrementPage());
@@ -362,16 +623,15 @@ const ConversationScreen = ({route, navigation}) => {
                 {/* AI loading indicator */}
                 {index === allChat?.length - 1 && socketLoader ? (
                   <View style={styles.aiMessageRow}>
-                    <View style={styles.aiIconContainer}>
-                      <Image
-                        style={styles.aiIcon}
-                        source={
-                          isDarkMode
-                            ? require('../assets/images/ConversationLogoDark.svg')
-                            : require('../assets/images/ConversationLogo.svg')
-                        }
-                      />
-                    </View>
+                    <Image
+                      style={styles.aiIcon}
+                      source={
+                        isDarkMode
+                          ? require('../assets/images/ConversationLogoDark.svg')
+                          : require('../assets/images/ConversationLogo.svg')
+                      }
+                    />
+                    <View style={styles.aiIconContainer}></View>
                     <View style={styles.aiMessageContainer}>
                       <View style={styles.loadingPlaceholder}>
                         <ActivityIndicator
@@ -388,8 +648,8 @@ const ConversationScreen = ({route, navigation}) => {
                         style={styles.aiIcon}
                         source={
                           isDarkMode
-                            ? require('../assets/images/ConversationLogoDark.svg')
-                            : require('../assets/images/ConversationLogo.svg')
+                            ? require('../assets/images/LightIcon.png')
+                            : require('../assets/images/LightIcon.png')
                         }
                       />
                     </View>
@@ -401,7 +661,9 @@ const ConversationScreen = ({route, navigation}) => {
                           styles.aiMessageText,
                           isDarkMode ? styles.aiMessageTextDark : null,
                         ]}>
-                        {containsHTML(item?.message) ? (
+                        {' '}
+                        <HTMLRenderer htmlContent={item?.message} />
+                        {/* {containsHTML(item?.message) ? (
                           <HTMLRenderer htmlContent={item?.message} />
                         ) : (
                           <Text
@@ -414,16 +676,14 @@ const ConversationScreen = ({route, navigation}) => {
                               ? item.message
                               : ''}
                           </Text>
-                        )}
+                        )} */}
                       </View>
-
                       {/* Table if available */}
                       {/* {item?.table && (
                         <View style={styles.blockElement}>
                           <TableCreator data={item.table} />
                         </View>
                       )} */}
-
                       {/* Graph if available */}
                       {/* {item?.graph && (
                         <View style={styles.blockElement}>
@@ -445,7 +705,7 @@ const ConversationScreen = ({route, navigation}) => {
           </View>
         )}
 
-        {/* Replace the old input form with InputComponent */}
+        {/* Input component */}
         <View
           style={[
             styles.formContainer,
@@ -482,11 +742,9 @@ const styles = StyleSheet.create({
   safeAreaDark: {
     backgroundColor: 'black',
   },
-
   backButton: {
     padding: 8,
   },
-
   container: {
     flex: 1,
   },
@@ -494,7 +752,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'black',
   },
   lightBackground: {
-    backgroundColor: '#F8F8F8',
+    backgroundColor: '#FFFFFF',
   },
   chatScrollArea: {
     flex: 1,
@@ -532,33 +790,31 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
   aiMessageRow: {
-    flexDirection: 'row',
     marginTop: 12,
   },
   aiIconContainer: {
-    width: 48,
-    height: 48,
+    width: 30,
+    height: 30,
     marginRight: 12,
     justifyContent: 'flex-start',
   },
   aiIcon: {
-    width: 48,
-    height: 48,
+    width: 30,
+    height: 30,
     resizeMode: 'contain',
+
+    display: 'block',
   },
   aiMessageContainer: {
     flex: 1,
     marginTop: 4,
+    marginLeft: 12,
   },
   aiMessageText: {
-    backgroundColor: '#FFFFFF',
     borderRadius: 18,
-    padding: 12,
-    maxWidth: '90%',
+    maxWidth: '100%',
   },
-  aiMessageTextDark: {
-    backgroundColor: '#2A2A2A', // Dark bubble for dark mode
-  },
+  aiMessageTextDark: {},
   messageText: {
     fontSize: 16,
     lineHeight: 22,
@@ -586,11 +842,7 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: '#E5E5E5',
     backgroundColor: '#FFFFFF',
-    // Add shadow to make the input stand out
-    shadowColor: '#000',
-    shadowOffset: {width: 0, height: -3},
-    shadowOpacity: 0.1,
-    shadowRadius: 3,
+
     elevation: 5,
     zIndex: 10,
   },
@@ -603,6 +855,14 @@ const styles = StyleSheet.create({
     marginTop: 8,
     fontSize: 14,
     textAlign: 'center',
+  },
+  // Add these new styles for tables and other HTML elements
+  tableContainer: {
+    borderWidth: 1,
+    borderColor: '#DDD',
+    marginVertical: 8,
+    borderRadius: 4,
+    overflow: 'hidden',
   },
 });
 
