@@ -49,7 +49,9 @@ const LoginScreen = () => {
   const [password, setPasswordValue] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
+
+  // Remove the redundant isLoading state - use only the RTK Query loading state
+  // const [isLoading, setIsLoading] = useState(false);
 
   // User data state for analytics
   const [userData, setUserData] = useState({
@@ -73,6 +75,9 @@ const LoginScreen = () => {
   const [dimensions, setDimensions] = useState(Dimensions.get('window'));
   const isMobile = dimensions.width < 768;
 
+  // RTK Query login mutation hook
+  const [login, {isLoading: isLoginLoading}] = useLoginMutation();
+
   // Update dimensions when screen size changes
   useEffect(() => {
     const subscription = Dimensions.addEventListener('change', ({window}) => {
@@ -94,20 +99,30 @@ const LoginScreen = () => {
         const systemName = DeviceInfo.getSystemName();
         const systemVersion = await DeviceInfo.getSystemVersion();
         const ipAddress = await NetInfo.fetch().then(
-          state => state.details.ipAddress,
+          state => state.details?.ipAddress || '',
         );
 
         setUserData({
           country: locationData.country_name || '',
           regionName: locationData.region || '',
           city: locationData.city || '',
-          ip: ipAddress || locationData.ip,
-          device: deviceType,
-          os: `${systemName} ${systemVersion}`,
+          ip: ipAddress || locationData.ip || '',
+          device: deviceType || '',
+          os: `${systemName || ''} ${systemVersion || ''}`,
           browser: 'React Native WebView', // Since it's a mobile app
         });
       } catch (error) {
         console.error('Error fetching user data:', error);
+        // Set default values if fetch fails
+        setUserData({
+          country: '',
+          regionName: '',
+          city: '',
+          ip: '',
+          device: Platform.OS || '',
+          os: Platform.OS || '',
+          browser: 'React Native WebView',
+        });
       }
     };
 
@@ -138,16 +153,22 @@ const LoginScreen = () => {
     }
   };
 
-  // RTK Query login mutation hook
-  const [login, {isLoading: isLoginLoading}] = useLoginMutation();
-
   // Handle form submission
   const handleLogin = async () => {
     // Validate form before submission
-    if (!email) setEmailError('Email is required');
-    if (!password) setPasswordError('Password is required');
+    let hasErrors = false;
 
-    if (!email || !password || emailError || passwordError) {
+    if (!email) {
+      setEmailError('Email is required');
+      hasErrors = true;
+    }
+
+    if (!password) {
+      setPasswordError('Password is required');
+      hasErrors = true;
+    }
+
+    if (hasErrors || emailError || passwordError) {
       Toast.show({
         type: 'error',
         text1: 'Validation Error',
@@ -157,8 +178,6 @@ const LoginScreen = () => {
     }
 
     try {
-      setIsLoading(true);
-
       // Prepare payload with user data
       const payload = {
         email: email,
@@ -192,18 +211,14 @@ const LoginScreen = () => {
         navigation.navigate('Home');
       } else if (!loginData?.data?.emailVerified) {
         // Handle email verification flow
-        // This would call your sendOtp API
-        // await sendOtp({ email: email }).unwrap();
-
         Toast.show({
           type: 'info',
           text1: 'Verification Required',
           text2: loginData?.message || 'Please verify your email to continue',
         });
 
-        // Navigate to verification screen or show modal
-        // setOpenVerifyModal(true);
-        // or navigation.navigate('VerifyEmail', { email });
+        // Navigate to verification screen
+        navigation.navigate('VerifyEmail', {email});
       }
     } catch (error) {
       console.error('Error during login:', error);
@@ -215,8 +230,6 @@ const LoginScreen = () => {
           error?.data?.message ||
           'Please check your credentials',
       });
-    } finally {
-      setIsLoading(false);
     }
   };
 
@@ -289,7 +302,10 @@ const LoginScreen = () => {
                 ]}>
                 <TextInput
                   ref={passwordRef}
-                  style={styles.passwordInput}
+                  style={[
+                    styles.passwordInput,
+                    effectiveDarkMode ? {color: '#FFFFFF'} : {color: '#010102'},
+                  ]}
                   placeholder="Password"
                   placeholderTextColor={
                     effectiveDarkMode ? '#999999' : '#757575'
@@ -355,11 +371,13 @@ const LoginScreen = () => {
             <TouchableOpacity
               style={[
                 styles.loginButton,
-                !email || !password ? styles.loginButtonDisabled : null,
+                !email || !password || isLoginLoading
+                  ? styles.loginButtonDisabled
+                  : null,
               ]}
               onPress={handleLogin}
-              disabled={!email || !password || isLoading || isLoginLoading}>
-              {isLoading || isLoginLoading ? (
+              disabled={!email || !password || isLoginLoading}>
+              {isLoginLoading ? (
                 <ActivityIndicator color="#FFFFFF" size="small" />
               ) : (
                 <Text style={styles.loginButtonText}>Sign In</Text>
@@ -492,7 +510,6 @@ const styles = StyleSheet.create({
     flex: 1,
     height: '100%',
     fontSize: 16,
-    color: '#010102', // Will be overridden by container style
     padding: 0,
   },
   eyeIcon: {
