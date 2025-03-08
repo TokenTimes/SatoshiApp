@@ -3,7 +3,6 @@ import {
   ScrollView,
   StyleSheet,
   View,
-  useColorScheme,
   KeyboardAvoidingView,
   Platform,
   Text,
@@ -15,9 +14,11 @@ import {
 } from 'react-native';
 import Voice from 'react-native-voice';
 import InputComponent from '../assets/components/InputComponent';
+import {useSelector} from 'react-redux';
 
 const HomeScreen = ({navigation}) => {
-  const isDarkMode = useColorScheme() === 'light';
+  // Use Redux global state for dark mode instead of device settings
+  const isDarkMode = useSelector(state => state.global.isDarkMode);
 
   const [prompt, setPrompt] = useState('');
   const [image, setImage] = useState('');
@@ -268,19 +269,10 @@ const HomeScreen = ({navigation}) => {
     }
   };
 
-  // Navigation functions
-  const navigateToProfile = () => {
-    navigation.navigate('Profile');
-  };
-
-  const navigateToSettings = () => {
-    navigation.navigate('Settings');
-  };
-
   return (
     <TouchableWithoutFeedback onPress={dismissKeyboard}>
       <KeyboardAvoidingView
-        style={styles.container}
+        style={!isDarkMode ? styles.containerLight : styles.containerDark}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         keyboardVerticalOffset={10}>
         {/* If no response, show centered elements */}
@@ -290,7 +282,7 @@ const HomeScreen = ({navigation}) => {
             <View style={styles.headerContainerMobile}>
               <Text
                 style={
-                  isDarkMode ? styles.headerTitleDark : styles.headerTitle
+                  isDarkMode ? styles.headerTitleDark : styles.headerTitleLight
                 }>
                 Satoshi <Text style={styles.highlight}>GPT</Text>
               </Text>
@@ -306,22 +298,8 @@ const HomeScreen = ({navigation}) => {
               startRecording={startRecording}
               stopRecording={stopRecording}
               onSendPress={handleSendPress}
+              isDarkMode={isDarkMode}
             />
-
-            {/* Add Navigation Buttons */}
-            <View style={styles.navigationButtonsContainer}>
-              <TouchableOpacity
-                style={styles.navButton}
-                onPress={navigateToProfile}>
-                <Text style={styles.navButtonText}>Profile</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={styles.navButton}
-                onPress={navigateToSettings}>
-                <Text style={styles.navButtonText}>Settings</Text>
-              </TouchableOpacity>
-            </View>
           </View>
         )}
 
@@ -363,7 +341,11 @@ const HomeScreen = ({navigation}) => {
 };
 
 const styles = StyleSheet.create({
-  container: {
+  containerLight: {
+    flex: 1,
+    backgroundColor: 'white',
+  },
+  containerDark: {
     flex: 1,
     backgroundColor: 'black',
   },
@@ -377,7 +359,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 10, // Space between logo and input
   },
-  headerTitle: {
+  headerTitleLight: {
     fontFamily: 'Parsi',
     color: '#010102',
     fontWeight: '700',

@@ -3,11 +3,11 @@ import {
   StyleSheet,
   TextInput,
   View,
-  useColorScheme,
   Text,
   TouchableOpacity,
   Animated,
   Easing,
+  Image,
 } from 'react-native';
 
 const InputComponent = ({
@@ -19,8 +19,8 @@ const InputComponent = ({
   startRecording,
   stopRecording,
   onSendPress,
+  isDarkMode, // Now accepting isDarkMode as a prop from parent
 }) => {
-  const isDarkMode = useColorScheme() === 'light';
   // For animated record button ring
   const animatedRing = useRef(new Animated.Value(0)).current;
 
@@ -133,11 +133,15 @@ const InputComponent = ({
           }}
           style={[
             styles.actionButtonRecord,
-            styles.recordButton,
+            !isDarkMode ? styles.recordButton : styles.recordButtonDark,
             isRecording && styles.recordingButton,
           ]}
           disabled={loading}>
-          <Text style={styles.buttonIconText}>↑</Text>
+          <Image
+            source={require('../Icons/microphone-red.png')}
+            style={styles.logo}
+            resizeMode="contain"
+          />{' '}
         </TouchableOpacity>
       </View>
 
@@ -257,11 +261,18 @@ const styles = StyleSheet.create({
   },
   recordButton: {
     borderWidth: 2,
+    borderColor: 'rgba(255, 0, 0, 0.12)',
+    marginRight: 3,
+    backgroundColor: 'white',
+  },
+  recordButtonDark: {
+    borderWidth: 2,
     borderColor: 'rgba(138, 138, 138, 0.11)',
     marginRight: 3,
+    backgroundColor: 'rgba(255, 0, 0, 0.6)',
   },
   recordingButton: {
-    backgroundColor: '#990000', // Darker red when
+    backgroundColor: 'rgb(255, 0, 0)',
     zIndex: 2,
   },
   buttonIconText: {
@@ -277,6 +288,10 @@ const styles = StyleSheet.create({
     color: 'white',
     fontSize: 14,
     fontWeight: 'bold',
+  },
+  logo: {
+    width: 200,
+    height: 20,
   },
 });
 

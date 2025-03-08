@@ -17,6 +17,8 @@ import {
 } from 'react-native';
 import {useNavigation} from '@react-navigation/native';
 import {Eye, EyeOff, Check} from 'lucide-react-native';
+import DeviceInfo from 'react-native-device-info';
+import NetInfo from '@react-native-community/netinfo';
 
 import Toast from 'react-native-toast-message';
 import {useDispatch, useSelector} from 'react-redux';
@@ -26,6 +28,7 @@ import {
   setUserDetails,
   setDarkMode,
 } from '../slices/globalSlice';
+import {useLoginMutation} from '../services/auth';
 import {StyleSheet} from 'react-native';
 
 // Regex for email validation
@@ -48,6 +51,17 @@ const LoginScreen = () => {
   const [rememberMe, setRememberMe] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
+  // User data state for analytics
+  const [userData, setUserData] = useState({
+    country: '',
+    regionName: '',
+    city: '',
+    ip: '',
+    device: '',
+    os: '',
+    browser: '',
+  });
+
   // Form validation state
   const [emailError, setEmailError] = useState('');
   const [passwordError, setPasswordError] = useState('');
@@ -65,6 +79,39 @@ const LoginScreen = () => {
       setDimensions(window);
     });
     return () => subscription?.remove();
+  }, []);
+
+  // Fetch user location and device data
+  useEffect(() => {
+    const fetchUserData = async () => {
+      try {
+        // Get location data
+        const locationRes = await fetch('https://ipapi.co/json/');
+        const locationData = await locationRes.json();
+
+        // Get device information
+        const deviceType = DeviceInfo.getDeviceType();
+        const systemName = DeviceInfo.getSystemName();
+        const systemVersion = await DeviceInfo.getSystemVersion();
+        const ipAddress = await NetInfo.fetch().then(
+          state => state.details.ipAddress,
+        );
+
+        setUserData({
+          country: locationData.country_name || '',
+          regionName: locationData.region || '',
+          city: locationData.city || '',
+          ip: ipAddress || locationData.ip,
+          device: deviceType,
+          os: `${systemName} ${systemVersion}`,
+          browser: 'React Native WebView', // Since it's a mobile app
+        });
+      } catch (error) {
+        console.error('Error fetching user data:', error);
+      }
+    };
+
+    fetchUserData();
   }, []);
 
   // Validate email on change
@@ -91,6 +138,9 @@ const LoginScreen = () => {
     }
   };
 
+  // RTK Query login mutation hook
+  const [login, {isLoading: isLoginLoading}] = useLoginMutation();
+
   // Handle form submission
   const handleLogin = async () => {
     // Validate form before submission
@@ -109,24 +159,27 @@ const LoginScreen = () => {
     try {
       setIsLoading(true);
 
-      // Mock API call - replace with your actual login logic
-      setTimeout(() => {
-        // Simulate successful login
-        const mockUserData = {
-          token: 'fake-jwt-token',
-          user: {
-            id: '123',
-            email: email,
-            name: 'User Name',
-            isDarkMode: effectiveDarkMode,
-          },
-        };
+      // Prepare payload with user data
+      const payload = {
+        email: email,
+        password: password,
+        ...userData,
+      };
 
-        // Update Redux state
-        dispatch(setAuthToken(mockUserData.token));
+      console.log('Login payload:', payload);
+
+      // Use RTK Query mutation to login
+      const loginData = await login(payload).unwrap();
+
+      if (loginData?.data?.token) {
+        // Extract isDarkMode from user data or fallback to false
+        const userIsDarkMode = loginData?.data?.user?.isDarkMode || false;
+
+        // Update Redux state - the onQueryStarted in authApi.js already handles AsyncStorage
+        dispatch(setAuthToken(loginData.data.token));
         dispatch(setEmail(email));
-        dispatch(setUserDetails(mockUserData.user));
-        dispatch(setDarkMode(mockUserData.user.isDarkMode));
+        dispatch(setUserDetails(loginData.data.user));
+        dispatch(setDarkMode(userIsDarkMode));
 
         // Show success message
         Toast.show({
@@ -137,16 +190,33 @@ const LoginScreen = () => {
 
         // Navigate to home screen
         navigation.navigate('Home');
+      } else if (!loginData?.data?.emailVerified) {
+        // Handle email verification flow
+        // This would call your sendOtp API
+        // await sendOtp({ email: email }).unwrap();
 
-        setIsLoading(false);
-      }, 1500);
+        Toast.show({
+          type: 'info',
+          text1: 'Verification Required',
+          text2: loginData?.message || 'Please verify your email to continue',
+        });
+
+        // Navigate to verification screen or show modal
+        // setOpenVerifyModal(true);
+        // or navigation.navigate('VerifyEmail', { email });
+      }
     } catch (error) {
-      setIsLoading(false);
+      console.error('Error during login:', error);
       Toast.show({
         type: 'error',
         text1: 'Login Failed',
-        text2: error?.message || 'Please check your credentials',
+        text2:
+          error?.error ||
+          error?.data?.message ||
+          'Please check your credentials',
       });
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -288,8 +358,8 @@ const LoginScreen = () => {
                 !email || !password ? styles.loginButtonDisabled : null,
               ]}
               onPress={handleLogin}
-              disabled={!email || !password || isLoading}>
-              {isLoading ? (
+              disabled={!email || !password || isLoading || isLoginLoading}>
+              {isLoading || isLoginLoading ? (
                 <ActivityIndicator color="#FFFFFF" size="small" />
               ) : (
                 <Text style={styles.loginButtonText}>Sign In</Text>
