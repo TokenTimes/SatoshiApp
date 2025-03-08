@@ -1,4 +1,4 @@
-import React from 'react';
+import React, {useState} from 'react';
 import {
   View,
   Image,
@@ -11,10 +11,16 @@ import {useNavigation} from '@react-navigation/native';
 import {useSelector, useDispatch} from 'react-redux';
 import {setDarkMode} from '../../slices/globalSlice';
 
+// Import the MobileSidebar component
+import MobileSidebar from './MobileSidebar';
+
 const TopNavbar = () => {
   const navigation = useNavigation();
   const dispatch = useDispatch();
   const colorScheme = useColorScheme();
+
+  // State to control sidebar visibility
+  const [sidebarVisible, setSidebarVisible] = useState(false);
 
   // Get dark mode state from Redux
   const isDarkMode = useSelector(state => state.global.isDarkMode);
@@ -23,48 +29,58 @@ const TopNavbar = () => {
   const effectiveDarkMode =
     isDarkMode !== undefined ? isDarkMode : colorScheme === 'dark';
 
-  // Toggle dark mode
-  const toggleDarkMode = () => {
-    dispatch(setDarkMode(!effectiveDarkMode));
+  // Toggle sidebar visibility
+  const toggleSidebar = () => {
+    setSidebarVisible(!sidebarVisible);
   };
 
   return (
-    <View
-      style={[
-        styles.navbar,
-        effectiveDarkMode ? styles.navbarDark : styles.navbarLight,
-      ]}>
-      {/* Left circle - blue, does nothing */}
-      <View>{/* Empty blue circle */}</View>
-      <Image
-        source={
-          !isDarkMode
-            ? require('../../assets/Icons/ListBlack.png')
-            : require('../../assets/Icons/List.png')
-        }
-        resizeMode="contain"
-        style={styles.List}
+    <>
+      {/* Mobile Sidebar - will be rendered on top of everything */}
+      <MobileSidebar
+        isVisible={sidebarVisible}
+        onClose={() => setSidebarVisible(false)}
       />
-      {/* Center logo */}
-      <View style={styles.logoContainer}>
-        <Image
-          source={
-            effectiveDarkMode
-              ? require('../../assets/images/sidebarLogo.png')
-              : require('../../assets/images/sidebarLogoBlack.png')
-          }
-          style={styles.logo}
-          resizeMode="contain"
-        />
-      </View>
 
-      {/* Right circle - blue with white plus, navigates to Home */}
-      <TouchableOpacity
-        style={styles.circleButtonBlue}
-        onPress={() => navigation.navigate('Home')}>
-        <Text style={styles.plusSign}>+</Text>
-      </TouchableOpacity>
-    </View>
+      <View
+        style={[
+          styles.navbar,
+          effectiveDarkMode ? styles.navbarDark : styles.navbarLight,
+        ]}>
+        {/* Left button - now toggles the sidebar */}
+        <TouchableOpacity onPress={toggleSidebar}>
+          <Image
+            source={
+              !isDarkMode
+                ? require('../../assets/Icons/ListBlack.png')
+                : require('../../assets/Icons/List.png')
+            }
+            resizeMode="contain"
+            style={styles.List}
+          />
+        </TouchableOpacity>
+
+        {/* Center logo */}
+        <View style={styles.logoContainer}>
+          <Image
+            source={
+              effectiveDarkMode
+                ? require('../../assets/images/sidebarLogo.png')
+                : require('../../assets/images/sidebarLogoBlack.png')
+            }
+            style={styles.logo}
+            resizeMode="contain"
+          />
+        </View>
+
+        {/* Right circle - blue with white plus, navigates to Home */}
+        <TouchableOpacity
+          style={styles.circleButtonBlue}
+          onPress={() => navigation.navigate('Home')}>
+          <Text style={styles.plusSign}>+</Text>
+        </TouchableOpacity>
+      </View>
+    </>
   );
 };
 
@@ -76,6 +92,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 16,
     borderBottomWidth: 1,
+    zIndex: 1, // Ensure the navbar is above content but below the sidebar
   },
   navbarLight: {
     backgroundColor: '#FFFFFF',
