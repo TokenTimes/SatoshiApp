@@ -1,6 +1,7 @@
 import React, {useState, useRef} from 'react';
 import {View, Text, StyleSheet, TouchableOpacity, Modal} from 'react-native';
-import {useSelector} from 'react-redux';
+import {useSelector, useDispatch} from 'react-redux';
+import {toggleDarkMode, clearUserData} from '../../slices/globalSlice';
 
 // Create a simplified version of the dropdown for direct use
 const ProfileDropdownMenu = ({
@@ -11,6 +12,7 @@ const ProfileDropdownMenu = ({
   setDialog,
 }) => {
   const isDarkMode = useSelector(state => state.global.isDarkMode);
+  const dispatch = useDispatch();
 
   if (!isVisible) return null;
 
@@ -47,9 +49,17 @@ const ProfileDropdownMenu = ({
     onClose();
   };
 
+  // Toggle dark mode function
+  const handleDarkModeToggle = () => {
+    dispatch(toggleDarkMode());
+    // Don't close the menu to allow user to see the change
+  };
+
   const handleLogout = () => {
-    // Placeholder for logout functionality
-    console.log('Logout clicked');
+    // Implement the logout functionality from HomeScreen
+    dispatch(clearUserData());
+    console.log('User logged out');
+    navigation.navigate('Login');
     onClose();
   };
 
@@ -97,7 +107,9 @@ const ProfileDropdownMenu = ({
 
           <View style={styles.menuDivider} />
 
-          <TouchableOpacity style={styles.menuItem}>
+          <TouchableOpacity
+            style={styles.menuItem}
+            onPress={handleDarkModeToggle}>
             <Text
               style={[styles.menuText, isDarkMode ? styles.menuTextDark : {}]}>
               Dark Theme

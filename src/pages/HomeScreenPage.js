@@ -11,18 +11,14 @@ import {
   Animated,
   Easing,
   TouchableWithoutFeedback,
-  Switch,
 } from 'react-native';
 import Voice from 'react-native-voice';
 import InputComponent from '../assets/components/InputComponent';
-import {useSelector, useDispatch} from 'react-redux';
-import {toggleDarkMode, clearUserData} from '../slices/globalSlice'; // Import from your actual globalSlice
+import {useSelector} from 'react-redux';
 
 const HomeScreen = ({navigation}) => {
   // Use Redux global state for dark mode instead of device settings
   const isDarkMode = useSelector(state => state.global.isDarkMode);
-  const dispatch = useDispatch();
-
   const [prompt, setPrompt] = useState('');
   const [image, setImage] = useState('');
   const [response, setResponse] = useState('');
@@ -52,9 +48,7 @@ const HomeScreen = ({navigation}) => {
           },
           default: async () => false,
         });
-
         const hasPermissions = await permissions();
-
         if (hasPermissions) {
           Voice.onSpeechStart = onSpeechStart;
           Voice.onSpeechResults = onSpeechResults;
@@ -67,9 +61,7 @@ const HomeScreen = ({navigation}) => {
         console.error('Error setting up speech recognition:', error);
       }
     };
-
     setupVoice();
-
     return () => {
       // Cleanup voice handlers when component unmounts
       Voice.destroy().then(Voice.removeAllListeners);
@@ -103,18 +95,15 @@ const HomeScreen = ({navigation}) => {
     try {
       // First check if the device is available for speech recognition
       const isAvailable = await Voice.isAvailable();
-
       if (!isAvailable) {
         // Handle case where speech recognition is not available
         console.warn('Speech recognition is not available on this device');
         setError('Speech recognition is not available');
         return;
       }
-
       setPrompt(''); // Clear the input field before recording
       setIsRecording(true); // Set recording state before we actually call Voice.start()
       startCircleAnimation(); // Start the animation
-
       try {
         await Voice.start('en-US'); // Start recognizing speech
       } catch (error) {
@@ -127,7 +116,6 @@ const HomeScreen = ({navigation}) => {
         } else {
           setError('Could not start recording. Please try again.');
         }
-
         // Reset recording state
         setIsRecording(false);
         stopCircleAnimation();
@@ -141,7 +129,6 @@ const HomeScreen = ({navigation}) => {
   // Function to stop speech recognition
   const stopRecording = async () => {
     if (!isRecording) return;
-
     try {
       await Voice.stop(); // Stop recognizing speech
     } catch (error) {
@@ -179,23 +166,8 @@ const HomeScreen = ({navigation}) => {
     setExpanded(!expanded);
   };
 
-  // Function to handle theme toggle
-  const handleToggleTheme = () => {
-    dispatch(toggleDarkMode());
-  };
-
-  // Function to handle logout
-  const handleLogout = () => {
-    // Dispatch the clearUserData action to reset user state in Redux
-    dispatch(clearUserData());
-    console.log('User logged out');
-    // Navigate to Login screen after clearing user data
-    navigation.navigate('Login');
-  };
-
   useEffect(() => {
     let interval;
-
     if (loading) {
       interval = setInterval(() => {
         if (stepIndex < taskList.length - 2) {
@@ -204,7 +176,6 @@ const HomeScreen = ({navigation}) => {
         }
       }, 6000);
     }
-
     return () => clearInterval(interval);
   }, [loading, stepIndex, taskList]);
 
@@ -242,7 +213,6 @@ const HomeScreen = ({navigation}) => {
   const stopCircleAnimation = () => {
     // Stop any running animations and reset the circle
     animatedCircle.stopAnimation();
-
     Animated.timing(animatedCircle, {
       toValue: 1, // Return the circle to its original size
       duration: 300,
@@ -277,7 +247,6 @@ const HomeScreen = ({navigation}) => {
       setTimeout(() => {
         setResponse('Example response');
         setLoading(false);
-
         // Example of navigation after response
         // navigation.navigate('ResultScreen', { response: 'Example response' });
       }, 2000);
@@ -304,7 +273,6 @@ const HomeScreen = ({navigation}) => {
                 Satoshi <Text style={styles.highlight}>GPT</Text>
               </Text>
             </View>
-
             {/* Use the InputComponent here */}
             <InputComponent
               prompt={prompt}
@@ -317,34 +285,9 @@ const HomeScreen = ({navigation}) => {
               onSendPress={handleSendPress}
               isDarkMode={isDarkMode}
             />
-
-            {/* Theme Toggle and Logout Button */}
-            <View style={styles.controlsContainer}>
-              <View style={styles.toggleContainer}>
-                <Text
-                  style={
-                    isDarkMode ? styles.toggleTextDark : styles.toggleTextLight
-                  }>
-                  {isDarkMode ? 'Dark Mode' : 'Light Mode'}
-                </Text>
-                <Switch
-                  trackColor={{false: '#767577', true: '#81b0ff'}}
-                  thumbColor={isDarkMode ? '#2c83f6' : '#f4f3f4'}
-                  ios_backgroundColor="#3e3e3e"
-                  onValueChange={handleToggleTheme}
-                  value={isDarkMode}
-                />
-              </View>
-
-              <TouchableOpacity
-                style={styles.logoutButton}
-                onPress={handleLogout}>
-                <Text style={styles.logoutButtonText}>Logout</Text>
-              </TouchableOpacity>
-            </View>
+            {/* Theme Toggle and Logout Button removed from here */}
           </View>
         )}
-
         {/* Response area - Show only when there's a response */}
         {showResponseArea && (
           <ScrollView
@@ -371,7 +314,6 @@ const HomeScreen = ({navigation}) => {
                   stepIndex={stepIndex}
                   link={link}
                 />
-
                 {error && <Text style={styles.errorText}>{error}</Text>}
               </>
             )}
@@ -396,6 +338,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     paddingHorizontal: 20,
+    marginBottom: 100,
   },
   headerContainerMobile: {
     alignItems: 'center',
@@ -474,43 +417,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: 'bold',
   },
-
-  // New styles for toggle and logout
-  controlsContainer: {
-    width: '100%',
-    marginTop: 15,
-    paddingHorizontal: 10,
-    alignItems: 'center',
-  },
-  toggleContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 15,
-  },
-  toggleTextLight: {
-    color: '#010102',
-    marginRight: 10,
-    fontSize: 16,
-  },
-  toggleTextDark: {
-    color: '#ffffff',
-    marginRight: 10,
-    fontSize: 16,
-  },
-  logoutButton: {
-    backgroundColor: '#e74c3c',
-    paddingVertical: 8,
-    paddingHorizontal: 20,
-    borderRadius: 20,
-    width: 120,
-    alignItems: 'center',
-  },
-  logoutButtonText: {
-    color: 'white',
-    fontWeight: '600',
-    fontSize: 14,
-  },
+  // Removed theme toggle and logout styles
 });
 
 export default HomeScreen;

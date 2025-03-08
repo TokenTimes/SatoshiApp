@@ -233,8 +233,8 @@ const styles = StyleSheet.create({
   },
   recordingRing: {
     position: 'absolute',
-    width: 45,
-    height: 45,
+    width: 40,
+    height: 40,
     borderRadius: 22.5,
     borderWidth: 2,
     borderColor: 'rgba(255, 0, 0, 0.7)',
@@ -269,7 +269,7 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: 'rgba(138, 138, 138, 0.11)',
     marginRight: 3,
-    backgroundColor: 'rgba(255, 0, 0, 0.6)',
+    backgroundColor: 'rgba(255, 0, 0, 0.2)',
   },
   recordingButton: {
     backgroundColor: 'rgb(255, 0, 0)',
