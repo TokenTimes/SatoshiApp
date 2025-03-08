@@ -22,6 +22,13 @@ import Toast from 'react-native-toast-message';
 import {useDispatch, useSelector} from 'react-redux';
 import {setEmail, setPassword} from '../slices/globalSlice';
 import {Eye, EyeOff, Check} from 'lucide-react-native';
+import DeviceInfo from 'react-native-device-info';
+import NetInfo from '@react-native-community/netinfo';
+// Import the separate modal component
+import VerifyEmailModal from './VeifyEmailModal';
+// Import the correct API hooks
+import {useSignUpMutation} from '../services/auth';
+import {useSendOtpMutation} from '../services/otp';
 
 // Regex patterns for validation
 const EMAIL_REGEX = /^\S+@\S+$/i;
@@ -47,7 +54,6 @@ const SignUpScreen = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [termsAccepted, setTermsAccepted] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
   const [showVerifyModal, setShowVerifyModal] = useState(false);
 
   // Form validation state
@@ -56,6 +62,21 @@ const SignUpScreen = () => {
   const [passwordError, setPasswordError] = useState('');
   const [confirmPasswordError, setConfirmPasswordError] = useState('');
   const [termsError, setTermsError] = useState('');
+
+  // RTK Query hooks - with correct service imports
+  const [signUp, {isLoading: isSignUpLoading}] = useSignUpMutation();
+  const [sendOtp, {isLoading: isSendingOtp}] = useSendOtpMutation();
+
+  // User data state for analytics
+  const [userData, setUserData] = useState({
+    country: '',
+    regionName: '',
+    city: '',
+    ip: '',
+    device: '',
+    os: '',
+    browser: '',
+  });
 
   // Password validation indicators
   const [passwordValidations, setPasswordValidations] = useState({
@@ -82,6 +103,49 @@ const SignUpScreen = () => {
       setDimensions(window);
     });
     return () => subscription?.remove();
+  }, []);
+
+  // Fetch user location and device data
+  useEffect(() => {
+    const fetchUserData = async () => {
+      try {
+        // Get location data
+        const locationRes = await fetch('https://ipapi.co/json/');
+        const locationData = await locationRes.json();
+
+        // Get device information
+        const deviceType = DeviceInfo.getDeviceType();
+        const systemName = DeviceInfo.getSystemName();
+        const systemVersion = await DeviceInfo.getSystemVersion();
+        const ipAddress = await NetInfo.fetch().then(
+          state => state.details?.ipAddress || '',
+        );
+
+        setUserData({
+          country: locationData.country_name || '',
+          regionName: locationData.region || '',
+          city: locationData.city || '',
+          ip: ipAddress || locationData.ip || '',
+          device: deviceType || '',
+          os: `${systemName || ''} ${systemVersion || ''}`,
+          browser: 'React Native WebView', // Since it's a mobile app
+        });
+      } catch (error) {
+        console.error('Error fetching user data:', error);
+        // Set default values if fetch fails
+        setUserData({
+          country: '',
+          regionName: '',
+          city: '',
+          ip: '',
+          device: Platform.OS || '',
+          os: Platform.OS || '',
+          browser: 'React Native WebView',
+        });
+      }
+    };
+
+    fetchUserData();
   }, []);
 
   // Validate full name
@@ -188,7 +252,7 @@ const SignUpScreen = () => {
     !passwordError &&
     !confirmPasswordError;
 
-  // Handle form submission
+  // Handle form submission with improved error handling
   const handleSignUp = async () => {
     if (!isFormComplete) {
       // Validate all fields again
@@ -207,38 +271,95 @@ const SignUpScreen = () => {
     }
 
     try {
-      setIsLoading(true);
+      // Create sign-up payload with only the required fields
+      const signUpPayload = {
+        name: fullName,
+        email: email,
+        password: password,
+        // Remove user metadata that might cause API validation issues
+      };
 
-      // In a real app, this would call your signup API
-      // For demonstration, let's simulate a successful signup
-      setTimeout(() => {
-        // Store user details for login
-        dispatch(setEmail(email));
-        dispatch(setPassword(password));
+      console.log('Sending signup payload:', signUpPayload);
 
-        // Show success toast
-        Toast.show({
-          type: 'success',
-          text1: 'Account Created',
-          text2: 'Verification code sent to your email',
-        });
+      // Store email and password in Redux (do this first before any API calls)
+      dispatch(setEmail(email));
+      dispatch(setPassword(password));
 
-        // In a real app, this would trigger the email verification modal
-        // For now, let's navigate to the login screen
-        setIsLoading(false);
+      // First show the verification modal
+      setShowVerifyModal(true);
 
-        // Show verification modal or navigate to verification screen
-        // setShowVerifyModal(true);
-        navigation.navigate('Login');
-      }, 1500);
+      // Then call the sign-up API
+      try {
+        const signUpResponse = await signUp(signUpPayload).unwrap();
+        console.log('Signup successful, response:', signUpResponse);
+
+        // After successful signup, try to send verification OTP
+        try {
+          const otpResponse = await sendOtp({email}).unwrap();
+          console.log('OTP sent successfully:', otpResponse);
+
+          Toast.show({
+            type: 'success',
+            text1: 'Account Created',
+            text2: 'Verification code sent to your email',
+          });
+        } catch (otpError) {
+          console.error('Error sending OTP:', otpError);
+          // Even if OTP sending fails, we keep the modal open so user can try resend
+          Toast.show({
+            type: 'warning',
+            text1: 'Account Created',
+            text2: 'Could not send verification code. Try "Resend code"',
+          });
+        }
+      } catch (signUpError) {
+        console.error('Sign Up error:', signUpError);
+
+        // If it's an "email already exists" error (409), we still try to send OTP
+        if (signUpError.status === 409) {
+          try {
+            // Send OTP to the existing email
+            const otpResponse = await sendOtp({email}).unwrap();
+            console.log('OTP sent to existing account:', otpResponse);
+
+            Toast.show({
+              type: 'info',
+              text1: 'Email Already Registered',
+              text2: 'Verification code sent. Verify to continue.',
+            });
+          } catch (otpError) {
+            console.error('Error sending OTP to existing email:', otpError);
+            Toast.show({
+              type: 'error',
+              text1: 'Verification Failed',
+              text2: 'Could not send verification code. Try again.',
+            });
+            setShowVerifyModal(false);
+          }
+        } else {
+          // For other signup errors, close the modal and show error
+          Toast.show({
+            type: 'error',
+            text1: 'Sign Up Failed',
+            text2: signUpError?.data?.message || 'Please try again later',
+          });
+          setShowVerifyModal(false);
+        }
+      }
     } catch (error) {
-      setIsLoading(false);
+      console.error('Unexpected error:', error);
       Toast.show({
         type: 'error',
-        text1: 'Sign Up Failed',
-        text2: error?.message || 'Please try again later',
+        text1: 'An unexpected error occurred',
+        text2: 'Please try again later',
       });
+      setShowVerifyModal(false);
     }
+  };
+
+  // Handle modal close
+  const handleCloseVerifyModal = () => {
+    setShowVerifyModal(false);
   };
 
   return (
@@ -558,11 +679,13 @@ const SignUpScreen = () => {
             <TouchableOpacity
               style={[
                 styles.signUpButton,
-                !isFormComplete ? styles.buttonDisabled : null,
+                !isFormComplete || isSignUpLoading || isSendingOtp
+                  ? styles.buttonDisabled
+                  : null,
               ]}
               onPress={handleSignUp}
-              disabled={!isFormComplete || isLoading}>
-              {isLoading ? (
+              disabled={!isFormComplete || isSignUpLoading || isSendingOtp}>
+              {isSignUpLoading || isSendingOtp ? (
                 <ActivityIndicator color="#FFFFFF" size="small" />
               ) : (
                 <Text style={styles.signUpButtonText}>Sign Up</Text>
@@ -587,6 +710,12 @@ const SignUpScreen = () => {
           </View>
         </ScrollView>
       </TouchableWithoutFeedback>
+
+      {/* Email Verification Modal */}
+      <VerifyEmailModal
+        visible={showVerifyModal}
+        onClose={handleCloseVerifyModal}
+      />
     </KeyboardAvoidingView>
   );
 };
@@ -627,7 +756,6 @@ const styles = StyleSheet.create({
   logoContainer: {
     alignItems: 'center',
     marginTop: 40,
-
     marginBottom: 40,
   },
   logo: {
