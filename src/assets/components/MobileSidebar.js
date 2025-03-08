@@ -16,6 +16,7 @@ import {useNavigation} from '@react-navigation/native';
 import {useSelector, useDispatch} from 'react-redux';
 import Icon from 'react-native-vector-icons/Ionicons';
 import ChatHistory from './ChatHistory';
+import ProfileSection from './ProfileSection'; // Import the new ProfileSection component
 
 const MobileSidebar = ({isVisible, onClose}) => {
   const dispatch = useDispatch();
@@ -50,17 +51,6 @@ const MobileSidebar = ({isVisible, onClose}) => {
     // Navigate to home screen to start a new chat
     navigation.navigate('Home');
     onClose();
-  };
-
-  // Get user initials for avatar fallback
-  const getInitials = name => {
-    if (!name) return '?';
-    return name
-      .split(' ')
-      .map(part => part.charAt(0))
-      .join('')
-      .toUpperCase()
-      .substring(0, 2);
   };
 
   if (!isVisible) {
@@ -160,40 +150,8 @@ const MobileSidebar = ({isVisible, onClose}) => {
               )}
             </View>
 
-            {/* Profile section at bottom */}
-            <View
-              style={[
-                styles.profileSection,
-                isDarkMode
-                  ? styles.profileSectionDark
-                  : styles.profileSectionLight,
-              ]}>
-              <View style={styles.profileImageContainer}>
-                {user.profilePicture ? (
-                  <Image
-                    source={{uri: user.profilePicture}}
-                    style={styles.profileImage}
-                  />
-                ) : (
-                  <View
-                    style={[
-                      styles.initialsContainer,
-                      {backgroundColor: '#2C83F6'},
-                    ]}>
-                    <Text style={styles.initials}>
-                      {getInitials(user.name || 'User')}
-                    </Text>
-                  </View>
-                )}
-              </View>
-              <Text
-                style={[
-                  styles.profileName,
-                  isDarkMode ? styles.textDark : styles.textLight,
-                ]}>
-                {user.name ? user.name.split(' ')[0] : 'User'}
-              </Text>
-            </View>
+            {/* Profile section at bottom - replaced with the new component */}
+            <ProfileSection navigation={navigation} />
           </SafeAreaView>
         </Animated.View>
       </View>
@@ -297,46 +255,6 @@ const styles = StyleSheet.create({
   },
   historyContainer: {
     flex: 1,
-  },
-  // Profile section
-  profileSection: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 16,
-    borderTopWidth: 1,
-  },
-  profileSectionLight: {
-    borderTopColor: '#F0F0F0',
-  },
-  profileSectionDark: {
-    borderTopColor: '#333333',
-  },
-  profileImageContainer: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    overflow: 'hidden',
-    marginRight: 12,
-  },
-  profileImage: {
-    width: '100%',
-    height: '100%',
-  },
-  initialsContainer: {
-    width: '100%',
-    height: '100%',
-    borderRadius: 18,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  initials: {
-    color: '#FFF',
-    fontSize: 14,
-    fontWeight: 'bold',
-  },
-  profileName: {
-    fontSize: 15,
-    fontWeight: '500',
   },
   textLight: {
     color: '#000000',
