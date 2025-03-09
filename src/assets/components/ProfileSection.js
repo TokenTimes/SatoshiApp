@@ -3,6 +3,7 @@ import {View, Text, StyleSheet, TouchableOpacity, Modal} from 'react-native';
 import {useSelector, useDispatch} from 'react-redux';
 import {toggleDarkMode, clearUserData} from '../../slices/globalSlice';
 import {useGetUserDetailQuery} from '../../services/user'; // Import the query hook
+import ProfileModal from './ProfileModal'; // Import the ProfileModal component
 
 // Create a simplified version of the dropdown for direct use
 const ProfileDropdownMenu = ({
@@ -140,8 +141,10 @@ const ProfileDropdownMenu = ({
   );
 };
 
-const ProfileSection = ({navigation, setIsDialogOpen, setDialog}) => {
+const ProfileSection = ({navigation}) => {
   const [isDropdownVisible, setIsDropdownVisible] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [activeDialog, setActiveDialog] = useState('profile_management'); // Default to profile management
   const isDarkMode = useSelector(state => state.global.isDarkMode);
 
   // Use the RTK Query hook to fetch user details
@@ -185,8 +188,15 @@ const ProfileSection = ({navigation, setIsDialogOpen, setDialog}) => {
         isVisible={isDropdownVisible}
         onClose={() => setIsDropdownVisible(false)}
         navigation={navigation}
-        setIsDialogOpen={setIsDialogOpen}
-        setDialog={setDialog}
+        setIsDialogOpen={setIsModalOpen}
+        setDialog={setActiveDialog}
+      />
+
+      {/* Render the ProfileModal */}
+      <ProfileModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        dialog={activeDialog}
       />
     </>
   );

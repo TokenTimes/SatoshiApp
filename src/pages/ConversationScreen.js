@@ -21,7 +21,7 @@ import {useGetAllMessageQuery} from '../services/chat';
 import {useGetUserDetailQuery} from '../services/user';
 import InputComponent from '../assets/components/InputComponent';
 import Voice from 'react-native-voice'; // Import Voice for speech recognition
-import Graph from '../assets/Graph/graph';
+import Graph from '../assets/Graph/Graph';
 import TableCreator from '../assets/components/TableCreator/TableCreator';
 
 // Get device width for HTML content sizing
