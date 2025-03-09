@@ -4,12 +4,10 @@ import {
   Text,
   StyleSheet,
   FlatList,
-  TextInput,
   TouchableOpacity,
   ActivityIndicator,
 } from 'react-native';
 import {useSelector, useDispatch} from 'react-redux';
-import Icon from 'react-native-vector-icons/Ionicons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import ConversationItem from './ConversationItem';
 import {useGetAllRoomQuery} from '../../services/chat';
@@ -19,14 +17,16 @@ const SORT_OLDEST = 'old';
 const SORT_NEWEST = 'new';
 const DEFAULT_SORT = SORT_NEWEST;
 
-const ChatHistory = ({onSelectConversation}) => {
+const ChatHistory = ({
+  onSelectConversation,
+  searchQuery = '',
+  setSearchQuery = () => {},
+}) => {
   const dispatch = useDispatch();
   const isDarkMode = useSelector(state => state.global.isDarkMode);
   const {roomPage} = useSelector(state => state.global);
 
-  // State for search and sort
-  const [searchQuery, setSearchQuery] = useState('');
-  const [isSearchFocused, setIsSearchFocused] = useState(false);
+  // State for sort only (search is now passed from parent)
   const [sort, setSort] = useState(DEFAULT_SORT);
 
   const {data: roomData, isFetching} = useGetAllRoomQuery({sort});
@@ -77,47 +77,8 @@ const ChatHistory = ({onSelectConversation}) => {
     setSort(prevSort => (prevSort === SORT_NEWEST ? SORT_OLDEST : SORT_NEWEST));
   };
 
-  // Error handling
-
   return (
     <View style={styles.container}>
-      {/* Search bar */}
-      <View
-        style={[
-          styles.searchContainer,
-          isDarkMode ? styles.searchContainerDark : styles.searchContainerLight,
-        ]}>
-        <Icon
-          name="search-outline"
-          size={18}
-          color={isDarkMode ? '#999' : '#666'}
-          style={styles.searchIcon}
-        />
-        <TextInput
-          style={[
-            styles.searchInput,
-            isDarkMode ? styles.textDark : styles.textLight,
-          ]}
-          placeholder="Search history"
-          placeholderTextColor={isDarkMode ? '#888' : '#999'}
-          value={searchQuery}
-          onChangeText={setSearchQuery}
-          onFocus={() => setIsSearchFocused(true)}
-          onBlur={() => setIsSearchFocused(false)}
-        />
-        {searchQuery.length > 0 && (
-          <TouchableOpacity
-            style={styles.clearButton}
-            onPress={() => setSearchQuery('')}>
-            <Icon
-              name="close-circle"
-              size={16}
-              color={isDarkMode ? '#888' : '#999'}
-            />
-          </TouchableOpacity>
-        )}
-      </View>
-
       {/* Sort button */}
       <TouchableOpacity
         style={[
@@ -128,15 +89,14 @@ const ChatHistory = ({onSelectConversation}) => {
         <Text style={isDarkMode ? styles.textDark : styles.textLight}>
           Sort: {sort === SORT_NEWEST ? 'Newest' : 'Oldest'}
         </Text>
-        <Icon
-          name={sort === SORT_NEWEST ? 'arrow-down' : 'arrow-up'}
-          size={16}
-          color={isDarkMode ? '#fff' : '#333'}
-        />
       </TouchableOpacity>
 
       {/* Conversation list */}
-      {filteredConversations.length === 0 ? (
+      {isFetching ? (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#2C83F6" />
+        </View>
+      ) : filteredConversations.length === 0 ? (
         <View style={styles.emptyContainer}>
           <Text style={isDarkMode ? styles.textDark : styles.textLight}>
             {searchQuery
@@ -168,33 +128,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  searchContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    height: 40,
-    borderRadius: 8,
-    marginHorizontal: 12,
-    marginVertical: 8,
-  },
-  searchContainerLight: {
-    backgroundColor: '#F5F5F5',
-  },
-  searchContainerDark: {
-    backgroundColor: '#2A2A2A',
-  },
-  searchIcon: {
-    marginRight: 8,
-  },
-  searchInput: {
-    flex: 1,
-    fontSize: 14,
-    height: '100%',
-    padding: 0,
-  },
-  clearButton: {
-    padding: 4,
-  },
   sortButton: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -202,7 +135,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 8,
     marginHorizontal: 12,
-    marginBottom: 8,
+    marginVertical: 8,
     borderRadius: 8,
   },
   sortButtonLight: {

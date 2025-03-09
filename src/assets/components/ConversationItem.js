@@ -7,6 +7,7 @@ import {
   TextInput,
   Modal,
   Alert,
+  Image,
 } from 'react-native';
 import {useSelector, useDispatch} from 'react-redux';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
@@ -167,13 +168,13 @@ const ConversationItem = ({roomInfo, index, totalItems, onSelect}) => {
               onPress={saveNewName}
               style={styles.iconButton}
               disabled={isRenamingLoading}>
-              <Icon name="check" size={20} color="#2C83F6" />
+              <Text style={styles.blueV}>V</Text>
             </TouchableOpacity>
             <TouchableOpacity
               onPress={() => setIsRenaming(false)}
               style={styles.iconButton}
               disabled={isRenamingLoading}>
-              <Icon name="close" size={20} color="#FF5252" />
+              <Text style={styles.redX}>X</Text>
             </TouchableOpacity>
           </View>
         ) : (
@@ -196,11 +197,10 @@ const ConversationItem = ({roomInfo, index, totalItems, onSelect}) => {
             <TouchableOpacity
               style={styles.menuButton}
               onPress={() => setIsMenuOpen(!isMenuOpen)}>
-              <Icon
-                name="dots-vertical"
-                size={20}
-                color={isDarkMode ? '#DDD' : '#666'}
-              />
+              <Text
+                style={!isDarkMode ? styles.textLightNew : styles.textDarkNew}>
+                ...
+              </Text>
             </TouchableOpacity>
           </View>
         )}
@@ -215,10 +215,13 @@ const ConversationItem = ({roomInfo, index, totalItems, onSelect}) => {
             isLastThree ? styles.menuTop : styles.menuBottom,
           ]}>
           <TouchableOpacity style={styles.menuItem} onPress={handleShare}>
-            <Icon
-              name="share-outline"
-              size={18}
-              color={isDarkMode ? '#FFF' : '#333'}
+            <Image
+              source={
+                isDarkMode
+                  ? require('../../assets/Icons/icons8-share-30Light.png')
+                  : require('../../assets/Icons/icons8-share-30.png')
+              }
+              style={styles.logo}
             />
             <Text style={isDarkMode ? styles.textDark : styles.textLight}>
               Share
@@ -226,10 +229,14 @@ const ConversationItem = ({roomInfo, index, totalItems, onSelect}) => {
           </TouchableOpacity>
 
           <TouchableOpacity style={styles.menuItem} onPress={handleRename}>
-            <Icon
-              name="pencil-outline"
-              size={18}
-              color={isDarkMode ? '#FFF' : '#333'}
+            <Image
+              source={
+                isDarkMode
+                  ? require('../../assets/Icons/icons8-edit-50Light.png')
+                  : require('../../assets/Icons/icons8-edit-50.png')
+              }
+              style={styles.logo}
+              resizeMode="contain"
             />
             <Text style={isDarkMode ? styles.textDark : styles.textLight}>
               Rename
@@ -237,10 +244,14 @@ const ConversationItem = ({roomInfo, index, totalItems, onSelect}) => {
           </TouchableOpacity>
 
           <TouchableOpacity style={styles.menuItem} onPress={handleDelete}>
-            <Icon
-              name="delete-outline"
-              size={18}
-              color={isDarkMode ? '#FFF' : '#333'}
+            <Image
+              source={
+                isDarkMode
+                  ? require('../../assets/Icons/icons8-delete-30Light.png')
+                  : require('../../assets/Icons/icons8-delete-30.png')
+              }
+              style={styles.logo}
+              resizeMode="contain"
             />
             <Text style={isDarkMode ? styles.textDark : styles.textLight}>
               Delete
@@ -359,7 +370,7 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
   menuButton: {
-    padding: 4,
+    padding: 10,
   },
   // Rename input
   renameContainer: {
@@ -467,6 +478,21 @@ const styles = StyleSheet.create({
   deleteButtonText: {
     color: '#FFF',
   },
+  textLightNew: {
+    color: 'black',
+  },
+  textDarkNew: {
+    color: 'white',
+  },
+  logo: {
+    width: 15,
+    height: 15,
+    marginRight: 15,
+  },
+  blueV: {
+    color: '#2C83F6',
+  },
+  redX: {color: '#FF5252'},
 });
 
 export default ConversationItem;

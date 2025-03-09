@@ -97,10 +97,14 @@ const MobileSidebar = ({isVisible, onClose}) => {
                   <TouchableOpacity
                     style={styles.closeSearchButton}
                     onPress={() => setIsSearchOpen(false)}>
-                    <Icon
-                      name="close-outline"
-                      size={24}
-                      color={isDarkMode ? '#fff' : '#000'}
+                    <Image
+                      source={
+                        isDarkMode
+                          ? require('../../assets/Icons/CloseSideBarLogoDarkMode.png')
+                          : require('../../assets/Icons/CloseSideBarLogoWhiteMode.png')
+                      }
+                      style={styles.logo}
+                      resizeMode="contain"
                     />
                   </TouchableOpacity>
                 </View>
@@ -110,10 +114,14 @@ const MobileSidebar = ({isVisible, onClose}) => {
                   <TouchableOpacity
                     style={styles.headerButton}
                     onPress={onClose}>
-                    <Icon
-                      name="menu-outline"
-                      size={24}
-                      color={isDarkMode ? '#fff' : '#000'}
+                    <Image
+                      source={
+                        isDarkMode
+                          ? require('../../assets/Icons/CloseSideBarLogoDarkMode.png')
+                          : require('../../assets/Icons/CloseSideBarLogoWhiteMode.png')
+                      }
+                      style={styles.logo}
+                      resizeMode="contain"
                     />
                   </TouchableOpacity>
 
@@ -121,10 +129,10 @@ const MobileSidebar = ({isVisible, onClose}) => {
                     <TouchableOpacity
                       style={styles.headerButton}
                       onPress={() => setIsSearchOpen(true)}>
-                      <Icon
-                        name="search-outline"
-                        size={22}
-                        color={isDarkMode ? '#fff' : '#000'}
+                      <Image
+                        source={require('../../assets/Icons/SearchSideBarDarkModeIcon.png')}
+                        style={styles.logo}
+                        resizeMode="contain"
                       />
                     </TouchableOpacity>
 
@@ -140,14 +148,11 @@ const MobileSidebar = ({isVisible, onClose}) => {
 
             {/* Pass the search text to chat history if search is open */}
             <View style={styles.historyContainer}>
-              {isSearchOpen ? (
-                <ChatHistory
-                  onSelectConversation={onClose}
-                  initialSearchQuery={searchText}
-                />
-              ) : (
-                <ChatHistory onSelectConversation={onClose} />
-              )}
+              <ChatHistory
+                onSelectConversation={onClose}
+                searchQuery={searchText}
+                setSearchQuery={setSearchText}
+              />
             </View>
 
             {/* Profile section at bottom - replaced with the new component */}
@@ -261,6 +266,10 @@ const styles = StyleSheet.create({
   },
   textDark: {
     color: '#FFFFFF',
+  },
+  logo: {
+    width: 24,
+    height: 24,
   },
 });
 
