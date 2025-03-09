@@ -64,6 +64,7 @@ const ConversationScreen = ({route, navigation}) => {
   const [errorMessage, setErrorMessage] = useState('');
   const [inputMessage, setInputMessage] = useState('');
   const [isRecording, setIsRecording] = useState(false);
+  const [queryTrigger, setQueryTrigger] = useState(0); // New state for triggering query refresh
 
   // Redux state
   const isDarkMode = useSelector(state => state.global.isDarkMode);
@@ -181,23 +182,34 @@ const ConversationScreen = ({route, navigation}) => {
       if (conversationId !== roomId) {
         console.log('Clearing previous chat messages');
         dispatch(setAllChat([])); // Clear previous conversation messages
+        setQueryTrigger(prev => prev + 1); // Trigger a new query
       }
     } else {
       console.warn('No conversationId provided in route params!');
     }
   }, [conversationId, dispatch, roomId]);
 
-  // Queries - Make sure to use the conversationId directly from route params
+  // Queries - Use the queryTrigger to force re-fetch when conversationId changes
   const {
     data: roomMessage,
     isLoading,
     isFetching,
+    refetch,
   } = useGetAllMessageQuery(
     {roomId: conversationId, page, limit: 10},
     {
       skip: !conversationId || !page,
+      refetchOnMountOrArgChange: true, // Ensure refetching when args change
     },
   );
+
+  // Explicitly refetch when conversationId changes
+  useEffect(() => {
+    if (conversationId && page && refetch) {
+      console.log('Explicitly refetching messages for room:', conversationId);
+      refetch();
+    }
+  }, [conversationId, refetch, page, queryTrigger]); // Include queryTrigger to avoid eslint warnings
 
   // Debug logs - Keep these to help diagnose issues
   console.log('Room message data:', roomMessage?.data);
@@ -208,6 +220,7 @@ const ConversationScreen = ({route, navigation}) => {
   );
   console.log('Current Redux roomId:', roomId);
   console.log('Current page:', page);
+  console.log('Query trigger value:', queryTrigger);
 
   // Create a component to render HTML content with react-native-render-html
   const HTMLRenderer = ({htmlContent}) => {
