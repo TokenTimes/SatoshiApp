@@ -442,7 +442,7 @@ const ConversationScreen = ({route, navigation}) => {
     [allChat, dispatch, conversationId],
   );
 
-  // Listen for responses in the room
+  // Listen for responses in the room - FIXED to properly clean up listeners
   const listenRoom = useCallback(() => {
     if (socket) {
       console.log('Setting up socket listener for room:', conversationId);
@@ -455,19 +455,21 @@ const ConversationScreen = ({route, navigation}) => {
     return () => {}; // Always return a cleanup function
   }, [socket, handleResponse, conversationId]);
 
-  // Effect: attach/detach the room listener
+  // Effect: attach/detach the room listener - only one listener should be created
   useEffect(() => {
     const cleanup = listenRoom();
     return cleanup;
   }, [listenRoom]);
 
   // Effect: if newMessage is set externally, send it once
+  // IMPORTANT: mirroring the web client approach by NOT including sendMessage in dependencies
   useEffect(() => {
     if (newMessage && socket && conversationId) {
       console.log('New message detected, sending:', newMessage);
       sendMessage(newMessage);
     }
-  }, [newMessage, socket, conversationId, sendMessage]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [newMessage, socket, conversationId]); // Removed sendMessage from dependencies!
 
   // On form submit
   const handleSendMessage = () => {
@@ -803,7 +805,6 @@ const styles = StyleSheet.create({
     width: 30,
     height: 30,
     resizeMode: 'contain',
-
     display: 'block',
   },
   aiMessageContainer: {
@@ -843,7 +844,6 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: '#E5E5E5',
     backgroundColor: '#FFFFFF',
-
     elevation: 5,
     zIndex: 10,
   },
@@ -857,7 +857,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     textAlign: 'center',
   },
-  // Add these new styles for tables and other HTML elements
   tableContainer: {
     borderWidth: 1,
     borderColor: '#DDD',
