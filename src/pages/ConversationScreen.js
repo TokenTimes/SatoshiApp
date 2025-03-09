@@ -20,6 +20,7 @@ import RenderHtml from 'react-native-render-html'; // Import react-native-render
 import {useGetAllMessageQuery} from '../services/chat';
 import {useGetUserDetailQuery} from '../services/user';
 import InputComponent from '../assets/components/InputComponent';
+import Voice from 'react-native-voice'; // Import Voice for speech recognition
 
 // Get device width for HTML content sizing
 const {width} = Dimensions.get('window');
@@ -68,6 +69,107 @@ const ConversationScreen = ({route, navigation}) => {
     state => state.global,
   );
   const dispatch = useDispatch();
+
+  // Voice recognition setup
+  useEffect(() => {
+    // Only setup Voice if platform permissions are granted
+    const setupVoice = async () => {
+      try {
+        // Check for permissions first (this is just a placeholder, actual implementation depends on RN version)
+        const permissions = Platform.select({
+          ios: async () => {
+            // On iOS, Voice.isAvailable() checks for permissions
+            const isAvailable = await Voice.isAvailable();
+            return isAvailable;
+          },
+          android: async () => {
+            // Android requires separate permission check, which Voice handles internally
+            return true;
+          },
+          default: async () => false,
+        });
+        const hasPermissions = await permissions();
+        if (hasPermissions) {
+          Voice.onSpeechStart = onSpeechStart;
+          Voice.onSpeechResults = onSpeechResults;
+          Voice.onSpeechEnd = onSpeechEnd;
+          Voice.onSpeechError = onSpeechError;
+        } else {
+          console.warn('Speech recognition permissions not granted');
+        }
+      } catch (error) {
+        console.error('Error setting up speech recognition:', error);
+      }
+    };
+    setupVoice();
+    return () => {
+      // Cleanup voice handlers when component unmounts
+      Voice.destroy().then(Voice.removeAllListeners);
+    };
+  }, []);
+
+  // Voice recognition event handlers
+  const onSpeechStart = () => {
+    setIsRecording(true);
+  };
+
+  const onSpeechResults = event => {
+    const speech = event.value[0];
+    setInputMessage(speech); // Set recognized text as input message
+  };
+
+  const onSpeechEnd = () => {
+    setIsRecording(false);
+  };
+
+  const onSpeechError = error => {
+    setIsRecording(false);
+    console.error('Speech Recognition Error: ', error);
+  };
+
+  // Function to start speech recognition
+  const startRecording = async () => {
+    try {
+      // First check if the device is available for speech recognition
+      const isAvailable = await Voice.isAvailable();
+      if (!isAvailable) {
+        // Handle case where speech recognition is not available
+        console.warn('Speech recognition is not available on this device');
+        setErrorMessage('Speech recognition is not available');
+        return;
+      }
+      setInputMessage(''); // Clear the input field before recording
+      setIsRecording(true); // Set recording state before we actually call Voice.start()
+      try {
+        await Voice.start('en-US'); // Start recognizing speech
+      } catch (error) {
+        console.error('Error starting speech recognition:', error);
+        // Check for specific error codes
+        if (error.code === 'permissions') {
+          setErrorMessage(
+            'Microphone permission denied. Please enable it in settings.',
+          );
+        } else {
+          setErrorMessage('Could not start recording. Please try again.');
+        }
+        // Reset recording state
+        setIsRecording(false);
+      }
+    } catch (e) {
+      console.error('Failed to check voice availability:', e);
+      setErrorMessage('Could not access speech recognition');
+    }
+  };
+
+  // Function to stop speech recognition
+  const stopRecording = async () => {
+    if (!isRecording) return;
+    try {
+      await Voice.stop(); // Stop recognizing speech
+    } catch (error) {
+      console.error('Error stopping speech recognition: ', error);
+    }
+  };
 
   // Important: Set conversation ID in Redux state when component mounts or ID changes
   useEffect(() => {
@@ -491,24 +593,12 @@ const ConversationScreen = ({route, navigation}) => {
 
     // Then send to server
     sendMessage(inputMessage);
-
+    setInputMessage('');
     setTimeout(() => {
       scrollToBottom();
     }, 100);
 
     setInputMessage('');
-  };
-
-  // Methods for voice recording
-  const startRecording = () => {
-    setIsRecording(true);
-    // Implement your voice recording logic here
-    console.log('Start recording...');
-  };
-
-  const stopRecording = () => {
-    setIsRecording(false);
-    console.log('Stop recording...');
   };
 
   // Load older messages if user scrolls to the top
@@ -665,20 +755,6 @@ const ConversationScreen = ({route, navigation}) => {
                         ]}>
                         {' '}
                         <HTMLRenderer htmlContent={item?.message} />
-                        {/* {containsHTML(item?.message) ? (
-                          <HTMLRenderer htmlContent={item?.message} />
-                        ) : (
-                          <Text
-                            style={[
-                              styles.messageText,
-                              isDarkMode ? styles.textDark : styles.textLight,
-                            ]}>
-                            {typeof item?.message === 'string' &&
-                            item?.message !== 'null'
-                              ? item.message
-                              : ''}
-                          </Text>
-                        )} */}
                       </View>
                       {/* Table if available */}
                       {/* {item?.table && (

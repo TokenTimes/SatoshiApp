@@ -270,9 +270,10 @@ const HomeScreen = ({navigation}) => {
               </Text>
               <Text
                 style={isDarkMode ? styles.subtitleDark : styles.subtitleLight}>
-                I am an AI agent that provides real-time crypto market analysis,
+                Your Crypto Friend
+                {/* I am an AI agent that provides real-time crypto market analysis,
                 on-chain insights, autonomous trading, and social sentiment
-                tracking.
+                tracking. */}
               </Text>
             </View>
 
@@ -338,7 +339,7 @@ const styles = StyleSheet.create({
   },
   headerContainerMobile: {
     alignItems: 'center',
-    marginBottom: 20,
+    marginBottom: 0,
   },
   headerTitleLight: {
     fontFamily: 'Parsi',
