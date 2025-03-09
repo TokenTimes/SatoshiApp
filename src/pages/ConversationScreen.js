@@ -795,7 +795,8 @@ const styles = StyleSheet.create({
   aiIconContainer: {
     width: 30,
     height: 30,
-    marginRight: 12,
+    marginLeft: 14,
+    marginBottom: 14,
     justifyContent: 'flex-start',
   },
   aiIcon: {

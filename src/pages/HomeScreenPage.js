@@ -1,4 +1,4 @@
-import React, {useEffect, useState, useRef} from 'react';
+import React, {useEffect, useState, useRef, useCallback} from 'react';
 import {
   ScrollView,
   StyleSheet,
@@ -14,11 +14,17 @@ import {
 } from 'react-native';
 import Voice from 'react-native-voice';
 import InputComponent from '../assets/components/InputComponent';
-import {useSelector} from 'react-redux';
+import {useSelector, useDispatch} from 'react-redux';
+import {SOCKET_EVENTS} from '../utils/Constants';
+import {setNewMessage, setRoomId} from '../slices/globalSlice';
+import chatApi from '../services/chat';
 
 const HomeScreen = ({navigation}) => {
   // Use Redux global state for dark mode instead of device settings
   const isDarkMode = useSelector(state => state.global.isDarkMode);
+  const socket = useSelector(state => state.global.socket);
+  const dispatch = useDispatch();
+
   const [prompt, setPrompt] = useState('');
   const [image, setImage] = useState('');
   const [response, setResponse] = useState('');
@@ -90,6 +96,55 @@ const HomeScreen = ({navigation}) => {
     console.error('Speech Recognition Error: ', error);
   };
 
+  // Listen for room creation event from socket
+  const listenRoom = useCallback(() => {
+    if (socket) {
+      console.log('Setting up ROOM_CREATED listener');
+
+      socket.on(SOCKET_EVENTS.ROOM_CREATED, message => {
+        console.log('ROOM_CREATED event received!', message);
+        console.log('Room ID:', message?.roomId);
+        dispatch(setRoomId(message?.roomId));
+        dispatch(chatApi?.util?.resetApiState());
+        navigation.navigate('Room', {conversationId: message?.roomId});
+      });
+
+      return () => {
+        console.log('Cleaning up ROOM_CREATED listener');
+        socket.off(SOCKET_EVENTS.ROOM_CREATED);
+      };
+    }
+    return () => {}; // Always return a cleanup function
+  }, [socket, dispatch, navigation]);
+  // Effect: attach/detach the room listener
+  useEffect(() => {
+    const cleanup = listenRoom();
+    return cleanup;
+  }, [listenRoom]);
+  useEffect(() => {
+    // Listen for incoming messages
+    listenRoom();
+  }, [navigation, socket, listenRoom]);
+  // Send message to create a new room
+  const sendMessage = useCallback(
+    message => {
+      if (!socket) {
+        console.error('Cannot send message - socket is not connected');
+        setError('Connection issue. Please try again.');
+        return false;
+      }
+      console.log('Sending ROOM_CREATE event with message:', message);
+      // Emit the ROOM_CREATE event (same as in web version)
+      socket.emit(SOCKET_EVENTS.ROOM_CREATE, {
+        message,
+      });
+      console.log('ROOM_CREATE event sent!');
+
+      return true;
+    },
+    [socket],
+  );
+
   // Function to start speech recognition
   const startRecording = async () => {
     try {
@@ -140,50 +195,24 @@ const HomeScreen = ({navigation}) => {
   const animatedCircle = useRef(new Animated.Value(1)).current;
 
   const taskList = [
-    'Conducting web research',
-    'Composing a draft article',
-    'Verifying factual accuracy',
-    'Editing and refining the content',
-    'Applying formatting and structure',
-    'Designing and creating visuals',
-    'Publishing the article to the website',
-    'Completed!',
+    'Connecting to server...',
+    'Creating new conversation...',
+    'Preparing interface...',
+    'Ready!',
   ];
-
-  // Suggestion list
-  const suggestions = [
-    "What's the current price of Bitcoin (BTC)?",
-    'Show me the top 5 holders of Shiba Inu.',
-    'Show me the top 10 cryptocurrencies by market cap.',
-    "What's the trading volume of Solana (SOL) today?",
-    'Which tokens have gained the most in the last 24 hours?',
-  ];
-
-  // Display limited suggestions initially, or all if "Show More" was clicked
-  const displaySuggestions = expanded ? suggestions : suggestions.slice(0, 5);
-
-  const toggleExpanded = () => {
-    setExpanded(!expanded);
-  };
 
   useEffect(() => {
     let interval;
     if (loading) {
       interval = setInterval(() => {
-        if (stepIndex < taskList.length - 2) {
+        if (stepIndex < taskList.length - 1) {
           setStatus([{step: taskList[stepIndex]}]);
           setStepIndex(prevStepIndex => prevStepIndex + 1);
         }
-      }, 6000);
+      }, 1000); // Faster status updates for better UX
     }
     return () => clearInterval(interval);
   }, [loading, stepIndex, taskList]);
-
-  useEffect(() => {
-    if (image && response) {
-      setStepIndex(prevStepIndex => prevStepIndex + 2);
-    }
-  }, [image, response]);
 
   const resetStatus = () => {
     setStepIndex(0);
@@ -236,20 +265,29 @@ const HomeScreen = ({navigation}) => {
     Keyboard.dismiss();
   };
 
-  // Function to handle send button press
+  // Function to handle send button press - this now creates a room
   const handleSendPress = () => {
     if (prompt.trim() !== '') {
       stopRecording(); // Ensure recording is stopped
       resetStatus();
       setLink('');
-      // Simulate API call logic
+
+      // Set loading state and show status messages
       setLoading(true);
-      setTimeout(() => {
-        setResponse('Example response');
+
+      // Store message in Redux (same as web app)
+      dispatch(setNewMessage(prompt));
+
+      // Send message to create a new room
+      const sent = sendMessage(prompt);
+
+      if (!sent) {
+        // If message couldn't be sent, reset loading state
         setLoading(false);
-        // Example of navigation after response
-        // navigation.navigate('ResultScreen', { response: 'Example response' });
-      }, 2000);
+        setError('Failed to connect to server');
+      }
+
+      // Clear the input after sending
       setPrompt('');
       Keyboard.dismiss();
     }
@@ -272,8 +310,15 @@ const HomeScreen = ({navigation}) => {
                 }>
                 Satoshi <Text style={styles.highlight}>GPT</Text>
               </Text>
+              <Text
+                style={isDarkMode ? styles.subtitleDark : styles.subtitleLight}>
+                I am an AI agent that provides real-time crypto market analysis,
+                on-chain insights, autonomous trading, and social sentiment
+                tracking.
+              </Text>
             </View>
-            {/* Use the InputComponent here */}
+
+            {/* Input Component */}
             <InputComponent
               prompt={prompt}
               setPrompt={setPrompt}
@@ -285,9 +330,9 @@ const HomeScreen = ({navigation}) => {
               onSendPress={handleSendPress}
               isDarkMode={isDarkMode}
             />
-            {/* Theme Toggle and Logout Button removed from here */}
           </View>
         )}
+
         {/* Response area - Show only when there's a response */}
         {showResponseArea && (
           <ScrollView
@@ -342,19 +387,33 @@ const styles = StyleSheet.create({
   },
   headerContainerMobile: {
     alignItems: 'center',
-    marginBottom: 10, // Space between logo and input
+    marginBottom: 20,
   },
   headerTitleLight: {
     fontFamily: 'Parsi',
     color: '#010102',
     fontWeight: '700',
     fontSize: 28,
+    marginBottom: 10,
   },
   headerTitleDark: {
     fontFamily: 'Parsi',
     color: '#ffffff',
     fontWeight: '700',
     fontSize: 28,
+    marginBottom: 10,
+  },
+  subtitleLight: {
+    color: '#666',
+    textAlign: 'center',
+    marginBottom: 20,
+    lineHeight: 22,
+  },
+  subtitleDark: {
+    color: '#AAA',
+    textAlign: 'center',
+    marginBottom: 20,
+    lineHeight: 22,
   },
   highlight: {
     color: '#2c83f6',
@@ -400,24 +459,12 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginVertical: 10,
   },
-  navigationButtonsContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    width: '80%',
+  // Suggestions styles
+  suggestionsContainer: {
+    width: '100%',
     marginTop: 20,
+    paddingHorizontal: 10,
   },
-  navButton: {
-    backgroundColor: '#2c83f6',
-    paddingVertical: 10,
-    paddingHorizontal: 20,
-    borderRadius: 25,
-  },
-  navButtonText: {
-    color: 'white',
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-  // Removed theme toggle and logout styles
 });
 
 export default HomeScreen;

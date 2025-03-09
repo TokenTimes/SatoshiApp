@@ -6,6 +6,7 @@ import AppNavigation from './AppNavigation';
 import {initializeApp} from './src/slices/globalSlice';
 import Toast from 'react-native-toast-message';
 import store from './src/store'; // Import your existing store
+import SocketProvider from './src/assets/components/SocketProvider/SocketProvider'; // Import the SocketProvider
 
 const App = () => {
   useEffect(() => {
@@ -15,10 +16,12 @@ const App = () => {
 
   return (
     <Provider store={store}>
-      <SafeAreaProvider>
-        <AppNavigation />
-        <Toast />
-      </SafeAreaProvider>
+      <SocketProvider>
+        <SafeAreaProvider>
+          <AppNavigation />
+          <Toast />
+        </SafeAreaProvider>
+      </SocketProvider>
     </Provider>
   );
 };
