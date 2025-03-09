@@ -29,12 +29,8 @@ const HomeScreen = ({navigation}) => {
   const [image, setImage] = useState('');
   const [response, setResponse] = useState('');
   const [loading, setLoading] = useState(false);
-  const [status, setStatus] = useState('');
   const [error, setError] = useState(null);
-  const [stepIndex, setStepIndex] = useState(0);
   const [isRecording, setIsRecording] = useState(false);
-  const [link, setLink] = useState('');
-  const [expanded, setExpanded] = useState(false);
 
   // Voice recognition setup
   useEffect(() => {
@@ -121,10 +117,6 @@ const HomeScreen = ({navigation}) => {
     const cleanup = listenRoom();
     return cleanup;
   }, [listenRoom]);
-  useEffect(() => {
-    // Listen for incoming messages
-    listenRoom();
-  }, [navigation, socket, listenRoom]);
   // Send message to create a new room
   const sendMessage = useCallback(
     message => {
@@ -194,31 +186,6 @@ const HomeScreen = ({navigation}) => {
   // For animated recording indicator
   const animatedCircle = useRef(new Animated.Value(1)).current;
 
-  const taskList = [
-    'Connecting to server...',
-    'Creating new conversation...',
-    'Preparing interface...',
-    'Ready!',
-  ];
-
-  useEffect(() => {
-    let interval;
-    if (loading) {
-      interval = setInterval(() => {
-        if (stepIndex < taskList.length - 1) {
-          setStatus([{step: taskList[stepIndex]}]);
-          setStepIndex(prevStepIndex => prevStepIndex + 1);
-        }
-      }, 1000); // Faster status updates for better UX
-    }
-    return () => clearInterval(interval);
-  }, [loading, stepIndex, taskList]);
-
-  const resetStatus = () => {
-    setStepIndex(0);
-    setStatus([{step: taskList[0]}]);
-  };
-
   const startCircleAnimation = () => {
     // Create a loop animation for the pulsing effect
     Animated.loop(
@@ -249,13 +216,6 @@ const HomeScreen = ({navigation}) => {
     }).start();
   };
 
-  const StatusComponent = ({taskList, stepIndex, link}) => (
-    <View style={styles.statusContainer}>
-      <Text style={styles.statusText}>{taskList[stepIndex]}</Text>
-      {link && <Text style={styles.linkText}>{link}</Text>}
-    </View>
-  );
-
   // Main area shows centered content initially
   // Once user has entered a response, show the response
   const showResponseArea = response || image || loading;
@@ -269,10 +229,8 @@ const HomeScreen = ({navigation}) => {
   const handleSendPress = () => {
     if (prompt.trim() !== '') {
       stopRecording(); // Ensure recording is stopped
-      resetStatus();
-      setLink('');
 
-      // Set loading state and show status messages
+      // Set loading state
       setLoading(true);
 
       // Store message in Redux (same as web app)
@@ -353,14 +311,7 @@ const HomeScreen = ({navigation}) => {
                 </TouchableOpacity>
               </View>
             ) : (
-              <>
-                <StatusComponent
-                  taskList={taskList}
-                  stepIndex={stepIndex}
-                  link={link}
-                />
-                {error && <Text style={styles.errorText}>{error}</Text>}
-              </>
+              <>{error && <Text style={styles.errorText}>{error}</Text>}</>
             )}
           </ScrollView>
         )}
@@ -440,19 +391,6 @@ const styles = StyleSheet.create({
     marginTop: 70,
     textAlign: 'center',
     fontSize: 16,
-  },
-  statusContainer: {
-    alignItems: 'center',
-    padding: 20,
-  },
-  statusText: {
-    color: 'white',
-    fontSize: 16,
-    marginBottom: 10,
-  },
-  linkText: {
-    color: '#2c83f6',
-    fontSize: 14,
   },
   errorText: {
     color: 'red',
