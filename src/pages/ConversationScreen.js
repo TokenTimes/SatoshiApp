@@ -568,12 +568,12 @@ const ConversationScreen = ({route, navigation}) => {
   // Effect: if newMessage is set externally, send it once
   // IMPORTANT: mirroring the web client approach by NOT including sendMessage in dependencies
   useEffect(() => {
-    if (newMessage && socket && conversationId) {
+    if (newMessage && socket) {
       console.log('New message detected, sending:', newMessage);
       sendMessage(newMessage);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [newMessage, socket, conversationId]); // Removed sendMessage from dependencies!
+  }, [newMessage, socket]); // Removed "sendMessage" from here
 
   // On form submit
   const handleSendMessage = () => {
@@ -598,7 +598,7 @@ const ConversationScreen = ({route, navigation}) => {
     setInputMessage('');
     setTimeout(() => {
       scrollToBottom();
-    }, 100);
+    }, 500);
 
     setInputMessage('');
   };

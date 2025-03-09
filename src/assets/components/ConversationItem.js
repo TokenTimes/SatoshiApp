@@ -23,7 +23,7 @@ const ConversationItem = ({roomInfo, index, totalItems, onSelect}) => {
   const dispatch = useDispatch();
   const navigation = useNavigation();
   const isDarkMode = useSelector(state => state.global.isDarkMode);
-  const currentRoomId = useSelector(state => state.global.roomId);
+  let currentRoomId = useSelector(state => state.global.roomId);
 
   // Local state
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -37,7 +37,7 @@ const ConversationItem = ({roomInfo, index, totalItems, onSelect}) => {
   const [deleteRoom, {isLoading: isDeleting}] = useDeleteRoomMutation();
 
   // Check if this conversation is the currently selected one
-  const isSelected = currentRoomId === roomInfo._id;
+  let isSelected = currentRoomId === roomInfo._id;
 
   // Position the menu based on item position in the list
   const isLastThree = totalItems >= 5 && index >= totalItems - 2;

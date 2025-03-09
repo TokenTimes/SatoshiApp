@@ -233,12 +233,10 @@ const HomeScreen = ({navigation}) => {
       // Set loading state
       setLoading(true);
 
-      // Store message in Redux (same as web app)
-      dispatch(setNewMessage(prompt));
-
       // Send message to create a new room
       const sent = sendMessage(prompt);
-
+      // Store message in Redux (same as web app)
+      dispatch(setNewMessage(prompt));
       if (!sent) {
         // If message couldn't be sent, reset loading state
         setLoading(false);

@@ -1,4 +1,4 @@
-import React, {useState} from 'react';
+import React, {useState, useEffect} from 'react';
 import {
   View,
   Image,
@@ -9,7 +9,7 @@ import {
 } from 'react-native';
 import {useNavigation} from '@react-navigation/native';
 import {useSelector, useDispatch} from 'react-redux';
-import {setDarkMode} from '../../slices/globalSlice';
+import {setDarkMode, setRoomId} from '../../slices/globalSlice';
 
 // Import the MobileSidebar component
 import MobileSidebar from './MobileSidebar';
@@ -22,8 +22,9 @@ const TopNavbar = () => {
   // State to control sidebar visibility
   const [sidebarVisible, setSidebarVisible] = useState(false);
 
-  // Get dark mode state from Redux
+  // Get states from Redux
   const isDarkMode = useSelector(state => state.global.isDarkMode);
+  const currentRoomId = useSelector(state => state.global.roomId);
 
   // Apply dark mode from either Redux or system preference
   const effectiveDarkMode =
@@ -32,6 +33,23 @@ const TopNavbar = () => {
   // Toggle sidebar visibility
   const toggleSidebar = () => {
     setSidebarVisible(!sidebarVisible);
+  };
+
+  // Modified home navigation function
+  const goHome = () => {
+    // First reset roomId to null
+    dispatch(setRoomId(null));
+
+    // Then navigate to Home
+    navigation.reset({
+      index: 0,
+      routes: [{name: 'Home'}],
+    });
+
+    // Also close sidebar if it's open
+    if (sidebarVisible) {
+      setSidebarVisible(false);
+    }
   };
 
   return (
@@ -61,7 +79,7 @@ const TopNavbar = () => {
         </TouchableOpacity>
 
         {/* Center logo */}
-        <TouchableOpacity onPress={() => navigation.navigate('Home')}>
+        <TouchableOpacity onPress={goHome}>
           <View style={styles.logoContainer}>
             {' '}
             <Image
@@ -77,9 +95,7 @@ const TopNavbar = () => {
         </TouchableOpacity>
 
         {/* Right circle - blue with white plus, navigates to Home */}
-        <TouchableOpacity
-          style={styles.circleButtonBlue}
-          onPress={() => navigation.navigate('Home')}>
+        <TouchableOpacity style={styles.circleButtonBlue} onPress={goHome}>
           <Text style={styles.plusSign}>+</Text>
         </TouchableOpacity>
       </View>
