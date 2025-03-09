@@ -21,6 +21,7 @@ import {useGetAllMessageQuery} from '../services/chat';
 import {useGetUserDetailQuery} from '../services/user';
 import InputComponent from '../assets/components/InputComponent';
 import Voice from 'react-native-voice'; // Import Voice for speech recognition
+import Graph from '../assets/Graph/graph';
 
 // Get device width for HTML content sizing
 const {width} = Dimensions.get('window');
@@ -756,18 +757,16 @@ const ConversationScreen = ({route, navigation}) => {
                         {' '}
                         <HTMLRenderer htmlContent={item?.message} />
                       </View>
-                      {/* Table if available */}
                       {/* {item?.table && (
                         <View style={styles.blockElement}>
                           <TableCreator data={item.table} />
                         </View>
                       )} */}
-                      {/* Graph if available */}
-                      {/* {item?.graph && (
+                      {item?.graph && (
                         <View style={styles.blockElement}>
                           <Graph symbol={item.graph} />
                         </View>
-                      )} */}
+                      )}
                     </View>
                   </View>
                 ) : null}
