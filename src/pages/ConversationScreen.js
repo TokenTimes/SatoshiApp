@@ -22,6 +22,7 @@ import {useGetUserDetailQuery} from '../services/user';
 import InputComponent from '../assets/components/InputComponent';
 import Voice from 'react-native-voice'; // Import Voice for speech recognition
 import Graph from '../assets/Graph/graph';
+import TableCreator from '../assets/components/TableCreator/TableCreator';
 
 // Get device width for HTML content sizing
 const {width} = Dimensions.get('window');
@@ -757,11 +758,11 @@ const ConversationScreen = ({route, navigation}) => {
                         {' '}
                         <HTMLRenderer htmlContent={item?.message} />
                       </View>
-                      {/* {item?.table && (
+                      {item?.table && (
                         <View style={styles.blockElement}>
                           <TableCreator data={item.table} />
                         </View>
-                      )} */}
+                      )}
                       {item?.graph && (
                         <View style={styles.blockElement}>
                           <Graph symbol={item.graph} />
