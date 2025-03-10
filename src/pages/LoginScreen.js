@@ -87,6 +87,7 @@ const LoginScreen = () => {
   }, []);
 
   // Fetch user location and device data
+  // Fetch user location and device data
   useEffect(() => {
     const fetchUserData = async () => {
       try {
@@ -102,30 +103,30 @@ const LoginScreen = () => {
           state => state.details?.ipAddress || '',
         );
 
+        // Set user data with default values for ALL fields
         setUserData({
-          country: locationData.country_name || '',
-          regionName: locationData.region || '',
-          city: locationData.city || '',
-          ip: ipAddress || locationData.ip || '',
-          device: deviceType || '',
-          os: `${systemName || ''} ${systemVersion || ''}`,
-          browser: 'React Native WebView', // Since it's a mobile app
+          country: locationData.country_name || 'Unknown',
+          regionName: locationData.region || 'Unknown Region', // Default value for region
+          city: locationData.city || 'Unknown City',
+          ip: ipAddress || locationData.ip || '0.0.0.0',
+          device: deviceType || Platform.OS,
+          os: `${systemName || Platform.OS} ${systemVersion || ''}`,
+          browser: 'React Native WebView',
         });
       } catch (error) {
         console.error('Error fetching user data:', error);
-        // Set default values if fetch fails
+        // Set non-empty default values for ALL fields if fetch fails
         setUserData({
-          country: '',
-          regionName: '',
-          city: '',
-          ip: '',
-          device: Platform.OS || '',
-          os: Platform.OS || '',
+          country: 'Unknown',
+          regionName: 'Unknown Region',
+          city: 'Unknown City',
+          ip: '0.0.0.0',
+          device: Platform.OS || 'Mobile',
+          os: Platform.OS || 'Mobile OS',
           browser: 'React Native WebView',
         });
       }
     };
-
     fetchUserData();
   }, []);
 

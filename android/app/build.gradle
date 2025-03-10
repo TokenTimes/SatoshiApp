@@ -116,4 +116,6 @@ dependencies {
     } else {
         implementation jscFlavor
     }
+    // Changed from compile to implementation
+    implementation project(':react-native-voice')
 }
