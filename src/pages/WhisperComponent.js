@@ -9,6 +9,7 @@ import {
   Platform,
 } from 'react-native';
 import AudioRecorderPlayer from 'react-native-audio-recorder-player';
+import RNFS from 'react-native-fs';
 import axios from 'axios';
 
 const audioRecorderPlayer = new AudioRecorderPlayer();
@@ -21,7 +22,7 @@ const WhisperComponent = ({setPrompt}) => {
     try {
       const path = Platform.select({
         ios: 'audio.m4a',
-        android: 'sdcard/audio.m4a',
+        android: `${RNFS.DocumentDirectoryPath}/audio.m4a`,
       });
       await audioRecorderPlayer.startRecorder(path);
       audioRecorderPlayer.addRecordBackListener(() => {});
@@ -47,8 +48,7 @@ const WhisperComponent = ({setPrompt}) => {
       });
 
       const response = await axios.post(
-        // 'https://api-test.olympus-demo.com/transcribe/audio',
-        'http://localhost:3001/transcribe/audio',
+        'https://api-test.olympus-demo.com/transcribe/audio',
         formData,
         {headers: {'Content-Type': 'multipart/form-data'}},
       );
