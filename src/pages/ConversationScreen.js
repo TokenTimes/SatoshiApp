@@ -16,18 +16,15 @@ import {
 import {useDispatch, useSelector} from 'react-redux';
 import {SOCKET_EVENTS} from '../utils/Constants';
 import {incrementPage, setAllChat, setRoomId} from '../slices/globalSlice';
-import RenderHtml from 'react-native-render-html'; // Import react-native-render-html
+import RenderHtml from 'react-native-render-html';
 import {useGetAllMessageQuery} from '../services/chat';
 import {useGetUserDetailQuery} from '../services/user';
 import InputComponent from '../assets/components/InputComponent';
-import Voice from 'react-native-voice'; // Import Voice for speech recognition
+import Voice from 'react-native-voice';
 import Graph from '../assets/Graph/Graph';
 import TableCreator from '../assets/components/TableCreator/TableCreator';
 
-// Get device width for HTML content sizing
-const {width} = Dimensions.get('window');
-
-// Helper function to check if string contains HTML
+const {width} = Dimensions.get('window'); // Helper function to check if string contains HTML
 const containsHTML = str => {
   return str && typeof str === 'string' && /<[a-z][\s\S]*>/i.test(str);
 };
@@ -49,12 +46,7 @@ const simpleSanitizeHtml = html => {
 };
 
 const ConversationScreen = ({route, navigation}) => {
-  // Extract conversationId from route params
   const {conversationId} = route.params || {};
-
-  // Debug log the conversation ID
-  console.log('ConversationScreen initialized with ID:', conversationId);
-
   const chatScrollViewRef = useRef(null);
   const [previousMessage, setPreviousMessage] = useState([]);
   const [seenAllChat, setSeenAllChat] = useState(false);
@@ -66,114 +58,52 @@ const ConversationScreen = ({route, navigation}) => {
   const [isRecording, setIsRecording] = useState(false);
   const [queryTrigger, setQueryTrigger] = useState(0); // New state for triggering query refresh
 
-  // Redux state
   const isDarkMode = useSelector(state => state.global.isDarkMode);
   const {newMessage, socket, roomId, allChat, page} = useSelector(
     state => state.global,
   );
   const dispatch = useDispatch();
-
-  // Voice recognition setup
   useEffect(() => {
-    // Only setup Voice if platform permissions are granted
+    if (conversationId) {
+      dispatch(setRoomId(conversationId));
+      if (conversationId !== roomId) {
+        dispatch(setAllChat([]));
+      }
+    }
+  }, [conversationId, dispatch, roomId]);
+
+  useEffect(() => {
     const setupVoice = async () => {
       try {
-        // Check for permissions first (this is just a placeholder, actual implementation depends on RN version)
-        const permissions = Platform.select({
-          ios: async () => {
-            // On iOS, Voice.isAvailable() checks for permissions
-            const isAvailable = await Voice.isAvailable();
-            return isAvailable;
-          },
-          android: async () => {
-            // Android requires separate permission check, which Voice handles internally
-            return true;
-          },
-          default: async () => false,
-        });
-        const hasPermissions = await permissions();
-        if (hasPermissions) {
-          Voice.onSpeechStart = onSpeechStart;
-          Voice.onSpeechResults = onSpeechResults;
-          Voice.onSpeechEnd = onSpeechEnd;
-          Voice.onSpeechError = onSpeechError;
-        } else {
-          console.warn('Speech recognition permissions not granted');
-        }
+        Voice.onSpeechStart = () => setIsRecording(true);
+        Voice.onSpeechResults = event => setInputMessage(event.value[0]);
+        Voice.onSpeechEnd = () => setIsRecording(false);
+        Voice.onSpeechError = () => setIsRecording(false);
       } catch (error) {
         console.error('Error setting up speech recognition:', error);
       }
     };
     setupVoice();
-    return () => {
-      // Cleanup voice handlers when component unmounts
-      Voice.destroy().then(Voice.removeAllListeners);
-    };
+    return () => Voice.destroy().then(Voice.removeAllListeners);
   }, []);
 
-  // Voice recognition event handlers
-  const onSpeechStart = () => {
-    setIsRecording(true);
-  };
-
-  const onSpeechResults = event => {
-    const speech = event.value[0];
-    setInputMessage(speech); // Set recognized text as input message
-  };
-
-  const onSpeechEnd = () => {
-    setIsRecording(false);
-  };
-
-  const onSpeechError = error => {
-    setIsRecording(false);
-    console.error('Speech Recognition Error: ', error);
-  };
-
-  // Function to start speech recognition
   const startRecording = async () => {
     try {
-      // First check if the device is available for speech recognition
-      const isAvailable = await Voice.isAvailable();
-      if (!isAvailable) {
-        // Handle case where speech recognition is not available
-        console.warn('Speech recognition is not available on this device');
-        setErrorMessage('Speech recognition is not available');
-        return;
-      }
-      setInputMessage(''); // Clear the input field before recording
-      setIsRecording(true); // Set recording state before we actually call Voice.start()
-      try {
-        await Voice.start('en-US'); // Start recognizing speech
-      } catch (error) {
-        console.error('Error starting speech recognition:', error);
-        // Check for specific error codes
-        if (error.code === 'permissions') {
-          setErrorMessage(
-            'Microphone permission denied. Please enable it in settings.',
-          );
-        } else {
-          setErrorMessage('Could not start recording. Please try again.');
-        }
-        // Reset recording state
-        setIsRecording(false);
-      }
-    } catch (e) {
-      console.error('Failed to check voice availability:', e);
-      setErrorMessage('Could not access speech recognition');
-    }
-  };
-
-  // Function to stop speech recognition
-  const stopRecording = async () => {
-    if (!isRecording) return;
-    try {
-      await Voice.stop(); // Stop recognizing speech
+      await Voice.start('en-US');
+      setIsRecording(true);
     } catch (error) {
-      console.error('Error stopping speech recognition: ', error);
+      console.error('Error starting speech recognition:', error);
+      setIsRecording(false);
     }
   };
 
+  const stopRecording = async () => {
+    try {
+      await Voice.stop();
+    } catch (error) {
+      console.error('Error stopping speech recognition:', error);
+    }
+  };
   // Important: Set conversation ID in Redux state when component mounts or ID changes
   useEffect(() => {
     if (conversationId) {
