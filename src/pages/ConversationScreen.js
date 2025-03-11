@@ -18,30 +18,19 @@ import {SOCKET_EVENTS} from '../utils/Constants';
 import {incrementPage, setAllChat, setRoomId} from '../slices/globalSlice';
 import RenderHtml from 'react-native-render-html';
 import {useGetAllMessageQuery} from '../services/chat';
-import {useGetUserDetailQuery} from '../services/user';
 import InputComponent from '../assets/components/InputComponent';
-import Voice from 'react-native-voice';
 import Graph from '../assets/Graph/Graph';
 import TableCreator from '../assets/components/TableCreator/TableCreator';
 
-const {width} = Dimensions.get('window'); // Helper function to check if string contains HTML
-const containsHTML = str => {
-  return str && typeof str === 'string' && /<[a-z][\s\S]*>/i.test(str);
-};
+const {width} = Dimensions.get('window');
 
-// Simple HTML sanitizer function for React Native
 const simpleSanitizeHtml = html => {
   if (!html) return '';
-
-  // Remove potentially dangerous script tags
   let sanitized = html.replace(
     /<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi,
     '',
   );
-
-  // Remove potentially dangerous onclick and other event attributes
   sanitized = sanitized.replace(/ on\w+="[^"]*"/g, '');
-
   return sanitized;
 };
 
@@ -72,38 +61,6 @@ const ConversationScreen = ({route, navigation}) => {
     }
   }, [conversationId, dispatch, roomId]);
 
-  useEffect(() => {
-    const setupVoice = async () => {
-      try {
-        Voice.onSpeechStart = () => setIsRecording(true);
-        Voice.onSpeechResults = event => setInputMessage(event.value[0]);
-        Voice.onSpeechEnd = () => setIsRecording(false);
-        Voice.onSpeechError = () => setIsRecording(false);
-      } catch (error) {
-        console.error('Error setting up speech recognition:', error);
-      }
-    };
-    setupVoice();
-    return () => Voice.destroy().then(Voice.removeAllListeners);
-  }, []);
-
-  const startRecording = async () => {
-    try {
-      await Voice.start('en-US');
-      setIsRecording(true);
-    } catch (error) {
-      console.error('Error starting speech recognition:', error);
-      setIsRecording(false);
-    }
-  };
-
-  const stopRecording = async () => {
-    try {
-      await Voice.stop();
-    } catch (error) {
-      console.error('Error stopping speech recognition:', error);
-    }
-  };
   // Important: Set conversation ID in Redux state when component mounts or ID changes
   useEffect(() => {
     if (conversationId) {
@@ -738,8 +695,6 @@ const ConversationScreen = ({route, navigation}) => {
             isRecording={isRecording}
             setIsRecording={setIsRecording}
             loading={socketLoader || messageLoading}
-            startRecording={startRecording}
-            stopRecording={stopRecording}
             onSendPress={handleSendMessage}
             isDarkMode={isDarkMode}
           />
